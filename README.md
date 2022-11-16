@@ -16,6 +16,8 @@ In the current setup, all requests in the high priority queue will be proxied be
 
 ## Getting started
 
+Docker images are available at https://hub.docker.com/r/flashbots/prio-load-balancer
+
 #### Run the program
 
 ```bash
