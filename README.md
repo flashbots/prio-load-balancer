@@ -49,6 +49,15 @@ Note: there's a bunch of constants that can be configured with env vars in [serv
 * If you restart with a different set of configured nodes (i.e. in env vars), the previous nodes will still be in Redis and still be used by the load balancer.
 * See the commands in the readme above on how to get the nodes it uses, and how to add/remove nodes.
 
+#### SGX Node RA-TLS attestation
+
+```
+# Add an SGX execution node
+curl -d '{"uri":"https://SGX_<MRENCLAVE>@foo"}' localhost:8080/nodes
+```
+
+Execution nodes running within SGX and providing attestation consumables via RA-TLS are supported. The RA-TLS certificate of the execution node is automatically attested with the `MRENCLAVE` which is submitted as part of the user part of **node URI** (`SGX_<MRENCLAVE>`).
+
 #### Test, lint, build
 
 ```bash

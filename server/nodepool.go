@@ -83,7 +83,11 @@ func (gp *NodePool) _addNode(uri string) (added bool, nodeUris []string, err err
 		return false, nil, nil
 	}
 
-	node := NewNode(gp.log, uri, gp.JobC, gp.numWorkersPerNode)
+	node, err := NewNode(gp.log, uri, gp.JobC, gp.numWorkersPerNode)
+	if err != nil {
+		return false, nil, err
+	}
+
 	err = node.HealthCheck()
 	if err != nil {
 		return false, nil, errors.Wrap(err, "_addNode healthcheck failed")

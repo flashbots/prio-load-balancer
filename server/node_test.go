@@ -15,8 +15,10 @@ func TestNode(t *testing.T) {
 	mockNodeServer1 := httptest.NewServer(http.HandlerFunc(mockNodeBackend1.Handler))
 
 	jobC := make(chan *SimRequest)
-	node := NewNode(testLog, mockNodeServer1.URL, jobC, 1)
-	err := node.HealthCheck()
+	node, err := NewNode(testLog, mockNodeServer1.URL, jobC, 1)
+	require.Nil(t, err, err)
+
+	err = node.HealthCheck()
 	require.Nil(t, err, err)
 
 	request := NewSimRequest(true, []byte("foo"))
@@ -29,7 +31,9 @@ func TestNode(t *testing.T) {
 	require.Equal(t, int32(0), node.curWorkers)
 
 	// Invalid backend -> fail healthcheck
-	node = NewNode(testLog, "http://localhost:4831", nil, 1)
+	node, err = NewNode(testLog, "http://localhost:4831", nil, 1)
+	require.Nil(t, err, err)
+
 	err = node.HealthCheck()
 	require.NotNil(t, err, err)
 }
@@ -42,15 +46,16 @@ func TestNodeError(t *testing.T) {
 	}
 
 	jobC := make(chan *SimRequest)
-	node := NewNode(testLog, mockNodeServer.URL, jobC, 1)
+	node, err := NewNode(testLog, mockNodeServer.URL, jobC, 1)
+	require.Nil(t, err, err)
 
 	// Check failing healthcheck
-	err := node.HealthCheck()
+	err = node.HealthCheck()
 	require.NotNil(t, err, err)
 	require.Contains(t, err.Error(), "479")
 
 	// Check failing ProxyRequest
-	_, statusCode, err := ProxyRequest(node.URI, []byte("net_version"), 3*time.Second)
+	_, statusCode, err := node.ProxyRequest([]byte("net_version"), 3*time.Second)
 	require.NotNil(t, err, err)
 	require.Equal(t, 479, statusCode)
 
