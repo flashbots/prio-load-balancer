@@ -34,17 +34,17 @@ type Node struct {
 
 func NewNode(log *zap.SugaredLogger, uri string, jobC chan *SimRequest, numWorkers int32) (*Node, error) {
 	client := http.Client{}
-	p_url, err := url.ParseRequestURI(uri)
+	pURL, err := url.ParseRequestURI(uri)
 	if err != nil {
 		return nil, err
 	}
-	username := p_url.User.Username()
+	username := pURL.User.Username()
 	if strings.HasPrefix(username, "SGX_") {
 		mrenclave, err := hex.DecodeString(strings.TrimPrefix(username, "SGX_"))
 		if err != nil {
 			return nil, err
 		}
-		verify_connection := func(cs tls.ConnectionState) error {
+		verifyConnection := func(cs tls.ConnectionState) error {
 			err := ratls_wrapper.RATLSVerifyDer(cs.PeerCertificates[0].Raw, mrenclave, nil, nil, nil)
 			return err
 		}
@@ -52,7 +52,7 @@ func NewNode(log *zap.SugaredLogger, uri string, jobC chan *SimRequest, numWorke
                         Transport: &http.Transport{
                                 TLSClientConfig: &tls.Config{
                                         InsecureSkipVerify: true,
-                                        VerifyConnection: verify_connection,
+                                        VerifyConnection: verifyConnection,
                                 },
                         },
                 }
