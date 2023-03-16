@@ -3,21 +3,15 @@ package server
 import (
 	"bytes"
 	"context"
-	"crypto/tls"
-	"encoding/hex"
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"strconv"
-	"strings"
 	"sync/atomic"
 	"time"
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
-
-	ratls_wrapper "github.com/konvera/gramine-ratls-golang"
 )
 
 type Node struct {
@@ -30,42 +24,6 @@ type Node struct {
 	cancelContext context.Context
 	cancelFunc    context.CancelFunc
 	client        *http.Client
-}
-
-func NewNode(log *zap.SugaredLogger, uri string, jobC chan *SimRequest, numWorkers int32) (*Node, error) {
-	client := http.Client{}
-	pURL, err := url.ParseRequestURI(uri)
-	if err != nil {
-		return nil, err
-	}
-	username := pURL.User.Username()
-	if strings.HasPrefix(username, "SGX_") {
-		mrenclave, err := hex.DecodeString(strings.TrimPrefix(username, "SGX_"))
-		if err != nil {
-			return nil, err
-		}
-		verifyConnection := func(cs tls.ConnectionState) error {
-			err := ratls_wrapper.RATLSVerifyDer(cs.PeerCertificates[0].Raw, mrenclave, nil, nil, nil)
-			return err
-		}
-		client = http.Client{
-                        Transport: &http.Transport{
-                                TLSClientConfig: &tls.Config{
-                                        InsecureSkipVerify: true,
-                                        VerifyConnection: verifyConnection,
-                                },
-                        },
-                }
-	}
-
-	return &Node{
-		log:        log,
-		URI:        uri,
-		AddedAt:    time.Now(),
-		jobC:       jobC,
-		numWorkers: numWorkers,
-		client:     &client,
-	}, nil
 }
 
 func (n *Node) HealthCheck() error {

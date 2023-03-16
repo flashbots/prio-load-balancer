@@ -26,30 +26,13 @@ jobs:
         git diff-index --quiet HEAD
 
   test:
-    runs-on: ubuntu-jammy
+    runs-on: ubuntu-latest
     steps:
     - name: Install Go
       uses: actions/setup-go@v2
       with:
         go-version: ^1.19
       id: go
-
-
-    - name: add intel SGX repository and packages
-      uses: myci-actions/add-deb-repo@10
-      with:
-        repo: deb [arch=amd64] https://download.01.org/intel-sgx/sgx_repo/ubuntu jammy main
-        repo-name: intel-sgx
-        keys-asc: https://download.01.org/intel-sgx/sgx_repo/ubuntu/intel-sgx-deb.key
-        install: libsgx-urts
-
-    - name: add gramine repository and packages
-      uses: myci-actions/add-deb-repo@10
-      with:
-        repo: deb [arch=amd64] https://packages.gramineproject.io/ jammy main
-        repo-name: gramine
-        keys-asc: https://packages.gramineproject.io/gramine-keyring.gpg
-        install: gramine
 
     - name: Checkout code
       uses: actions/checkout@v2
