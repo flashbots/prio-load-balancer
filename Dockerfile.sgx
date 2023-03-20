@@ -1,0 +1,47 @@
+# syntax=docker/dockerfile:1
+FROM golang:1.19 as builder
+ARG VERSION
+WORKDIR /build
+ADD . /build/
+RUN --mount=type=cache,target=/root/.cache/go-build GOOS=linux go build --tags sgx -trimpath -ldflags "-s -X main.version=$VERSION" -v -o prio-load-balancer main.go
+
+FROM ubuntu:20.04 as repos
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y curl && \
+    curl -fsSLo /usr/share/keyrings/gramine-keyring.gpg https://packages.gramineproject.io/gramine-keyring.gpg && \
+    echo 'deb [arch=amd64 signed-by=/usr/share/keyrings/gramine-keyring.gpg] https://packages.gramineproject.io/ focal main' > /etc/apt/sources.list.d/gramine.list && \
+    curl -fsSLo /usr/share/keyrings/intel-sgx-deb.key https://download.01.org/intel-sgx/sgx_repo/ubuntu/intel-sgx-deb.key && \
+    echo 'deb [arch=amd64 signed-by=/usr/share/keyrings/intel-sgx-deb.key] https://download.01.org/intel-sgx/sgx_repo/ubuntu focal main' > /etc/apt/sources.list.d/intel-sgx.list && \
+    curl -fsSLo /usr/share/keyrings/microsoft.key https://packages.microsoft.com/keys/microsoft.asc && \
+    echo 'deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft.key] https://packages.microsoft.com/ubuntu/20.04/prod focal main' > /etc/apt/sources.list.d/microsoft.list
+
+FROM ubuntu:20.04
+
+RUN apt-get update && \
+    apt-get install -y ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY --from=repos /usr/share/keyrings/gramine-keyring.gpg /usr/share/keyrings/gramine-keyring.gpg
+COPY --from=repos /usr/share/keyrings/intel-sgx-deb.key /usr/share/keyrings/intel-sgx-deb.key
+COPY --from=repos /usr/share/keyrings/microsoft.key /usr/share/keyrings/microsoft.key
+COPY --from=repos /etc/apt/sources.list.d/gramine.list /etc/apt/sources.list.d/gramine.list
+COPY --from=repos /etc/apt/sources.list.d/intel-sgx.list /etc/apt/sources.list.d/intel-sgx.list
+COPY --from=repos /etc/apt/sources.list.d/microsoft.list /etc/apt/sources.list.d/microsoft.list
+
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        az-dcap-client \
+        libsgx-urts \
+        libsgx-dcap-quote-verify && \
+    DEBIAN_FRONTEND=noninteractive apt-get download -y gramine-ratls-dcap && \
+    apt-get clean autoclean && apt-get autoremove --yes && \
+    dpkg -i --ignore-depends=gramine gramine-ratls-dcap*.deb && \
+    rm gramine-ratls-dcap*.deb && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY --from=builder /build/prio-load-balancer /app/prio-load-balancer
+ENV LISTEN_ADDR=":8080"
+EXPOSE 8080
+CMD ["/app/prio-load-balancer"]

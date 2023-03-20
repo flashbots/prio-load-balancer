@@ -66,6 +66,23 @@ make cover-html
 make build
 ```
 
+#### SGX Node RA-TLS attestation
+
+```
+# build prio-load-balancer with sgx support
+make build-sgx
+```
+
+> **IMPORTANT:** SGX attestation support requires additional dependencies. See [Dockerfile.sgx](Dockerfile.sgx) for details.
+
+```
+# Add an SGX execution node
+curl -d '{"uri":"https://SGX_<MRENCLAVE>@foo"}' localhost:8080/nodes
+```
+
+Execution nodes running within SGX and providing attestation consumables via RA-TLS are supported. The RA-TLS certificate of the execution node is automatically attested with the `MRENCLAVE` which is submitted as part of the user part of **node URI** (`SGX_<MRENCLAVE>`).
+
+
 ---
 
 ## Queue Benchmarks

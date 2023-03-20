@@ -23,21 +23,12 @@ type Node struct {
 	curWorkers    int32
 	cancelContext context.Context
 	cancelFunc    context.CancelFunc
-}
-
-func NewNode(log *zap.SugaredLogger, uri string, jobC chan *SimRequest, numWorkers int32) *Node {
-	return &Node{
-		log:        log,
-		URI:        uri,
-		AddedAt:    time.Now(),
-		jobC:       jobC,
-		numWorkers: numWorkers,
-	}
+	client        *http.Client
 }
 
 func (n *Node) HealthCheck() error {
 	payload := `{"jsonrpc":"2.0","method":"net_version","params":[],"id":123}`
-	_, _, err := ProxyRequest(n.URI, []byte(payload), 5*time.Second)
+	_, _, err := n.ProxyRequest([]byte(payload), 5*time.Second)
 	return err
 }
 
@@ -60,7 +51,7 @@ func (n *Node) startProxyWorker(id int32, cancelContext context.Context) {
 			}
 
 			req.Tries += 1
-			payload, statusCode, err := ProxyRequest(n.URI, req.Payload, ProxyRequestTimeout)
+			payload, statusCode, err := n.ProxyRequest(req.Payload, ProxyRequestTimeout)
 			if err != nil {
 				n.log.Errorw("node proxyRequest error", "uri", n.URI, "error", err)
 				response := SimResponse{StatusCode: statusCode, Payload: payload, Error: err, ShouldRetry: true}
@@ -109,8 +100,10 @@ func (n *Node) StopWorkersAndWait() {
 	}
 }
 
-func ProxyRequest(nodeURI string, payload []byte, timeout time.Duration) (resp []byte, statusCode int, err error) {
-	httpReq, err := http.NewRequest("POST", nodeURI, bytes.NewBuffer(payload))
+func (n *Node) ProxyRequest(payload []byte, timeout time.Duration) (resp []byte, statusCode int, err error) {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	httpReq, err := http.NewRequestWithContext(ctx, "POST", n.URI, bytes.NewBuffer(payload))
 	if err != nil {
 		return resp, statusCode, errors.Wrap(err, "creating proxy request failed")
 	}
@@ -119,8 +112,7 @@ func ProxyRequest(nodeURI string, payload []byte, timeout time.Duration) (resp [
 	httpReq.Header.Set("Content-Type", "application/json")
 	httpReq.Header.Set("Content-Length", strconv.Itoa(len(payload)))
 
-	client := &http.Client{Timeout: timeout}
-	httpResp, err := client.Do(httpReq)
+	httpResp, err := n.client.Do(httpReq)
 	if err != nil {
 		return resp, statusCode, errors.Wrap(err, "proxying request failed")
 	}
