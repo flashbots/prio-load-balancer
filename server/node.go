@@ -24,6 +24,7 @@ type Node struct {
 	cancelContext context.Context
 	cancelFunc    context.CancelFunc
 	client        *http.Client
+	enclave       bool
 }
 
 func (n *Node) HealthCheck() error {
@@ -103,6 +104,11 @@ func (n *Node) StopWorkersAndWait() {
 func (n *Node) ProxyRequest(payload []byte, timeout time.Duration) (resp []byte, statusCode int, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
+
+	if n.enclave {
+		payload = bytes.Replace(payload, []byte("eth_sendBundle"), []byte("protect_sendBundle"), 1)
+	}
+
 	httpReq, err := http.NewRequestWithContext(ctx, "POST", n.URI, bytes.NewBuffer(payload))
 	if err != nil {
 		return resp, statusCode, errors.Wrap(err, "creating proxy request failed")

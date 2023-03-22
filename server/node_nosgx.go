@@ -18,6 +18,7 @@ func NewNode(log *zap.SugaredLogger, uri string, jobC chan *SimRequest, numWorke
 		jobC:       jobC,
 		numWorkers: numWorkers,
 		client:     &http.Client{},
+		enclave:    false,
 	}
 	return node, nil
 }
