@@ -16,6 +16,10 @@ import (
 	ratls "github.com/konvera/gramine-ratls-golang"
 )
 
+func InitializeRATLSLib(enabled bool, timeoutInterval time.Duration, cacheFailures bool) error {
+	return ratls.InitRATLSLib(enabled, timeoutInterval, cacheFailures)
+}
+
 func NewNode(log *zap.SugaredLogger, uri string, jobC chan *SimRequest, numWorkers int32) (*Node, error) {
 	client := http.Client{}
 	pURL, err := url.ParseRequestURI(uri)

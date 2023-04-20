@@ -15,8 +15,6 @@ import (
 	"github.com/flashbots/prio-load-balancer/server"
 	"github.com/flashbots/prio-load-balancer/testutils"
 	"go.uber.org/zap"
-
-	ratls "github.com/konvera/gramine-ratls-golang"
 )
 
 var (
@@ -82,10 +80,6 @@ func main() {
 	}
 
 	srv, err := server.NewServer(serverOpts)
-	perr(err)
-
-	// Initialise RATLS library
-	err = ratls.InitRATLSLib(true, time.Hour, false)
 	perr(err)
 
 	if *useMockNodePtr {

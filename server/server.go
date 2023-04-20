@@ -47,6 +47,12 @@ func NewServer(opts ServerOpts) (*Server, error) {
 		s.log.Warn("WorkersPerNode is 0! This is not recommended. Use at least 1.")
 	}
 
+	// Initialise RATLS lib
+	err = InitializeRATLSLib(true, time.Hour, false)
+	if err != nil {
+		return nil, err
+	}
+
 	s.nodePool = NewNodePool(s.log, s.redis, s.opts.WorkersPerNode)
 	err = s.nodePool.LoadNodesFromRedis()
 	if err != nil {

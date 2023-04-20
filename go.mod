@@ -6,7 +6,7 @@ require (
 	github.com/alicebob/miniredis v2.5.0+incompatible
 	github.com/go-redis/redis/v8 v8.11.4
 	github.com/gorilla/mux v1.8.0
-	github.com/konvera/gramine-ratls-golang v0.0.0-20230404064644-c324e8c1d7b1
+	github.com/konvera/gramine-ratls-golang v0.0.0-20230417022221-836955fa9223
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.8.1
 	go.uber.org/atomic v1.10.0
