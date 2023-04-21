@@ -33,10 +33,10 @@ RUN apt-get update && \
         az-dcap-client \
         libsgx-urts \
         libsgx-dcap-quote-verify && \
-    DEBIAN_FRONTEND=noninteractive apt-get download -y gramine-ratls-dcap && \
+    DEBIAN_FRONTEND=noninteractive apt-get download -y gramine gramine-ratls-dcap && \
     apt-get clean autoclean && apt-get autoremove --yes && \
-    dpkg -i --ignore-depends=gramine gramine-ratls-dcap*.deb && \
-    rm gramine-ratls-dcap*.deb && \
+    dpkg -i --force-depends *.deb && \
+    rm *.deb && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
