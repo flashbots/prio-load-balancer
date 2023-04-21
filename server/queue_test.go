@@ -60,7 +60,7 @@ func TestPrioQueueGeneral(t *testing.T) {
 		require.Equal(t, true, q.Pop().IsHighPrio)
 	}
 
-	// lat one should be low-prio
+	// last one should be low-prio
 	require.Equal(t, false, q.Pop().IsHighPrio)
 	require.Equal(t, 0, len(q.lowPrio))
 	require.Equal(t, 0, len(q.highPrio))
