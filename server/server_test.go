@@ -112,6 +112,6 @@ func TestServerJobTimeout(t *testing.T) {
 	resp, _ := http.Post(url, "application/json", bytes.NewBuffer(reqPayloadBytes))
 	require.Nil(t, err, err)
 	require.Equal(t, 500, resp.StatusCode)
-	lenHP, lenLP := s.prioQueue.Len()
-	require.Equal(t, 0, lenHP+lenLP)
+	lenFT, lenHP, lenLP := s.prioQueue.Len()
+	require.Equal(t, 0, lenFT+lenHP+lenLP)
 }

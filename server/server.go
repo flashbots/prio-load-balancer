@@ -30,7 +30,7 @@ func NewServer(opts ServerOpts) (*Server, error) {
 	s := Server{
 		opts:      opts,
 		log:       opts.Log,
-		prioQueue: NewPrioQueue(MaxQueueItemsHighPrio, MaxQueueItemsLowPrio),
+		prioQueue: NewPrioQueue(MaxQueueItemsFastTrack, MaxQueueItemsHighPrio, MaxQueueItemsLowPrio),
 	}
 
 	if s.opts.RedisURI == "" {
@@ -125,6 +125,6 @@ func (s *Server) NumNodeWorkersAlive() int {
 	return res
 }
 
-func (s *Server) QueueSize() (lenHighPrio, lenLowPrio int) {
+func (s *Server) QueueSize() (lenFastTrack, lenHighPrio, lenLowPrio int) {
 	return s.prioQueue.Len()
 }

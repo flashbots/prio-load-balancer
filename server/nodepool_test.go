@@ -63,7 +63,7 @@ func TestNodePoolProxy(t *testing.T) {
 	err := gp.AddNode(rpcBackendServer.URL)
 	require.Nil(t, err, err)
 
-	request := NewSimRequest(true, []byte("foo"))
+	request := NewSimRequest([]byte("foo"), true, false)
 
 	gp.JobC <- request
 	res := <-request.ResponseC
@@ -84,7 +84,7 @@ func TestNodePoolWithError(t *testing.T) {
 		http.Error(w, "error", 479)
 	}
 
-	request := NewSimRequest(true, []byte("foo"))
+	request := NewSimRequest([]byte("foo"), true, false)
 	gp.JobC <- request
 	res := <-request.ResponseC
 	require.NotNil(t, res)

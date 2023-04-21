@@ -3,20 +3,24 @@ package server
 import "time"
 
 type SimRequest struct {
-	IsHighPrio bool
-	Payload    []byte
-	ResponseC  chan SimResponse
-	Cancelled  bool
-	CreatedAt  time.Time
-	Tries      int
+	// can be none of, or one of high-prio / fast-track
+	IsHighPrio  bool
+	IsFastTrack bool
+
+	Payload   []byte
+	ResponseC chan SimResponse
+	Cancelled bool
+	CreatedAt time.Time
+	Tries     int
 }
 
-func NewSimRequest(isHighPrio bool, payload []byte) *SimRequest {
+func NewSimRequest(payload []byte, isHighPrio, IsFastTrack bool) *SimRequest {
 	return &SimRequest{
-		IsHighPrio: isHighPrio,
-		Payload:    payload,
-		ResponseC:  make(chan SimResponse, 1),
-		CreatedAt:  time.Now(),
+		Payload:     payload,
+		IsHighPrio:  isHighPrio,
+		IsFastTrack: IsFastTrack,
+		ResponseC:   make(chan SimResponse, 1),
+		CreatedAt:   time.Now(),
 	}
 }
 
