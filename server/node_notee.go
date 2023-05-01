@@ -1,5 +1,5 @@
-//go:build !sgx
-// +build !sgx
+//go:build !tee
+// +build !tee
 
 package server
 

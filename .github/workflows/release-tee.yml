@@ -1,4 +1,4 @@
-name: ReleaseSGX
+name: ReleaseTEE
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   docker-image:
-    name: Publish Docker SGX Image
+    name: Publish Docker TEE Image
     runs-on: ubuntu-latest
 
     steps:
@@ -34,7 +34,7 @@ jobs:
         with:
           images: flashbots/prio-load-balancer
           flavor: |
-            suffix=-sgx,onlatest=true
+            suffix=-tee,onlatest=true
           tags: |
             type=sha
             type=semver,pattern={{version}}
@@ -50,7 +50,7 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           context: .
-          file: Dockerfile.sgx
+          file: Dockerfile.tee
           push: true
           build-args: |
             VERSION=${{ env.RELEASE_VERSION }}
