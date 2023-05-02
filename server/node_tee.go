@@ -4,10 +4,13 @@
 package server
 
 import (
+	"bytes"
+	"compress/gzip"
 	"crypto/tls"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
@@ -71,18 +74,26 @@ func NewNode(log *zap.SugaredLogger, uri string, jobC chan *SimRequest, numWorke
 		}
 	// SEV TLS config
 	} else if strings.HasPrefix(username, "SEV_") {
-		measurements, err := base64.StdEncoding.DecodeString(strings.TrimPrefix(username, "SEV_"))
+		gzmeasurements, err := base64.URLEncoding.DecodeString(strings.TrimPrefix(username, "SEV_"))
 		if err != nil {
+			return nil, err
+		}
+
+		gzreader, err := gzip.NewReader(bytes.NewReader(gzmeasurements));
+		if(err != nil){
+			return nil, err
+		}
+
+		measurements, err := ioutil.ReadAll(gzreader);
+		if(err != nil){
 			return nil, err
 		}
 
 		attConfig := config.DefaultForAzureSEVSNP()
-
 		err = json.Unmarshal(measurements, &attConfig.Measurements)
 		if err != nil {
 			return nil, err
 		}
-
 
 		validators := []atls.Validator{ snp.NewValidator(attConfig, attestationLogger{log}) }
 		tlsConfig, err := atls.CreateAttestationClientTLSConfig(nil, validators)

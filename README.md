@@ -79,7 +79,7 @@ make build-tee
 ```
 # base64 encode the VM measurements
 
-MEASUREMENTS=$(cat << EOF | base64
+MEASUREMENTS=$(cat << EOF | gzip | basenc --base64url -w0
 {
   "1": {
     "expected": "3d458cfe55cc03ea1f443f1562beec8df51c75e14a9fcf9a7234a13f198e7969",
@@ -138,15 +138,16 @@ MEASUREMENTS=$(cat << EOF | base64
     "warnOnly": false
   }
 }
-EOF)
+EOF
+)
 ```
 
 ```
 # Add the SEV execution node
-curl -d "{\"uri\":\"https://SGX_${MEASUREMENTS}@foo\"}" localhost:8080/nodes
+curl -d "{\"uri\":\"https://SEV_${MEASUREMENTS}@foo\"}" localhost:8080/nodes
 ```
 
-Execution nodes running within SEV and providing attestation consumables via constellations aTLS implementation are supported. The aTLS certificate of the execution node is automatically attested with the VM measurements which are submitted as part of the user part of the **node URI** (`SEV_<base64 encoded measurements>`).
+Execution nodes running within SEV and providing attestation consumables via constellations aTLS implementation are supported. The aTLS certificate of the execution node is automatically attested with the VM measurements which are submitted as part of the user part of the **node URI** (`SEV_<gzipped, base64url encoded measurements>`). You can read more about the attestation measurements in the [constellation docs](https://docs.edgeless.systems/constellation/architecture/attestation#runtime-measurements)
 
 #### SGX Node RA-TLS attestation
 ```
