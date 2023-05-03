@@ -33,6 +33,7 @@ func (s *Webserver) Start() {
 	r := mux.NewRouter()
 	r.HandleFunc("/", s.HandleRootRequest).Methods(http.MethodGet)
 	r.HandleFunc("/", s.HandleQueueRequest).Methods(http.MethodPost)
+	r.HandleFunc("/sim", s.HandleQueueRequest).Methods(http.MethodPost)
 	r.HandleFunc("/nodes", s.HandleNodesRequest).Methods(http.MethodGet, http.MethodPost, http.MethodDelete)
 	r.PathPrefix("/debug/pprof/").Handler(http.DefaultServeMux)
 
