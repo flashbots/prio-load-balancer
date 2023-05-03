@@ -107,8 +107,8 @@ func main() {
 		for {
 			time.Sleep(10 * time.Second)
 			log.Infow("goroutines:", "numGoroutines", runtime.NumGoroutine())
-			lenHighPrio, lenLowPrio := srv.QueueSize()
-			log.Infow("prioQueue size:", "highPrio", lenHighPrio, "lowPrio", lenLowPrio)
+			lenFastTrack, lenHighPrio, lenLowPrio := srv.QueueSize()
+			log.Infow("prioQueue size:", "fastTrack", lenFastTrack, "highPrio", lenHighPrio, "lowPrio", lenLowPrio)
 		}
 	}()
 

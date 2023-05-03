@@ -7,11 +7,13 @@ import (
 )
 
 var (
-	JobChannelBuffer      = GetEnvInt("JOB_CHAN_BUFFER", 2)          // buffer for JobC in backends (for transporting jobs from server -> backend node)
-	RequestMaxTries       = GetEnvInt("RETRIES_MAX", 3)              // 3 tries means it will be retried 2 additional times, and on third error would fail
-	MaxQueueItemsHighPrio = GetEnvInt("ITEMS_HIGHPRIO_MAX", 0)       // Max number of items in high-prio queue. 0 means no limit.
-	MaxQueueItemsLowPrio  = GetEnvInt("ITEMS_LOWPRIO_MAX", 0)        // Max number of items in low-prio queue. 0 means no limit.
-	PayloadMaxBytes       = GetEnvInt("PAYLOAD_MAX_KB", 8192) * 1024 // Max payload size in bytes. If a payload sent to the webserver is larger, it returns "400 Bad Request".
+	JobChannelBuffer = GetEnvInt("JOB_CHAN_BUFFER", 2)          // buffer for JobC in backends (for transporting jobs from server -> backend node)
+	RequestMaxTries  = GetEnvInt("RETRIES_MAX", 3)              // 3 tries means it will be retried 2 additional times, and on third error would fail
+	PayloadMaxBytes  = GetEnvInt("PAYLOAD_MAX_KB", 8192) * 1024 // Max payload size in bytes. If a payload sent to the webserver is larger, it returns "400 Bad Request".
+
+	MaxQueueItemsFastTrack = GetEnvInt("ITEMS_FASTTRACK_MAX", 0) // Max number of items in fast-track queue. 0 means no limit.
+	MaxQueueItemsHighPrio  = GetEnvInt("ITEMS_HIGHPRIO_MAX", 0)  // Max number of items in high-prio queue. 0 means no limit.
+	MaxQueueItemsLowPrio   = GetEnvInt("ITEMS_LOWPRIO_MAX", 0)   // Max number of items in low-prio queue. 0 means no limit.
 
 	RequestTimeout       = time.Duration(GetEnvInt("REQUEST_TIMEOUT", 5)) * time.Second       // Time between creation and receive in the node worker, after which a SimRequest will not be processed anymore
 	ServerJobSendTimeout = time.Duration(GetEnvInt("JOB_SEND_TIMEOUT", 2)) * time.Second      // How long the server tries to send a job into the nodepool for processing
