@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
@@ -60,6 +61,7 @@ func (s *Webserver) HandleRootRequest(w http.ResponseWriter, req *http.Request) 
 }
 
 func (s *Webserver) HandleQueueRequest(w http.ResponseWriter, req *http.Request) {
+	startTime := time.Now().UTC()
 	defer req.Body.Close()
 	body, err := io.ReadAll(req.Body)
 	if err != nil {
@@ -130,6 +132,7 @@ func (s *Webserver) HandleQueueRequest(w http.ResponseWriter, req *http.Request)
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(resp.StatusCode)
 			w.Write(resp.Payload)
+			s.log.Infow("Request completed", "durationMs", time.Since(startTime).Milliseconds(), "requestIsHighPrio", isHighPrio, "requestIsFastTrack", isFastTrack, "payloadSize", len(body))
 			return
 		}
 	}

@@ -20,7 +20,7 @@ func NewSimRequest(payload []byte, isHighPrio, IsFastTrack bool) *SimRequest {
 		IsHighPrio:  isHighPrio,
 		IsFastTrack: IsFastTrack,
 		ResponseC:   make(chan SimResponse, 1),
-		CreatedAt:   time.Now(),
+		CreatedAt:   time.Now().UTC(),
 	}
 }
 
