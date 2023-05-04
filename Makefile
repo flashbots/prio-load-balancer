@@ -10,8 +10,8 @@ v:
 build:
 	go build -trimpath -ldflags "-s -X main.version=${VERSION}" -v -o prio-load-balancer main.go
 
-build-sgx:
-	go build -tags sgx -trimpath -ldflags "-s -X main.version=${VERSION}" -v -o prio-load-balancer main.go
+build-tee:
+	go build -tags tee -trimpath -ldflags "-s -X main.version=${VERSION}" -v -o prio-load-balancer main.go
 
 clean:
 	rm -rf prio-load-balancer build/
@@ -41,5 +41,5 @@ cover-html:
 docker-image:
 	DOCKER_BUILDKIT=1 docker build --platform linux/amd64 --build-arg VERSION=${VERSION} . -t prio-load-balancer
 
-docker-image-sgx:
-	DOCKER_BUILDKIT=1 docker build --platform linux/amd64 --build-arg VERSION=${VERSION} . -f Dockerfile.sgx -t prio-load-balancer
+docker-image-tee:
+	DOCKER_BUILDKIT=1 docker build --platform linux/amd64 --build-arg VERSION=${VERSION} . -f Dockerfile.tee -t prio-load-balancer

@@ -66,22 +66,96 @@ make cover-html
 make build
 ```
 
+#### Node TEE attestation via TLS
+```
+# build prio-load-balancer with SGX and SEV support
+make build-tee
+```
+
+> **IMPORTANT:** SGX and SEV attestation support requires additional dependencies. See [Dockerfile.tee](Dockerfile.tee) for details.
+
+#### SEV Node aTLS attestation
+
+```
+# base64 encode the VM measurements
+
+MEASUREMENTS=$(cat << EOF | gzip | basenc --base64url -w0
+{
+  "1": {
+    "expected": "3d458cfe55cc03ea1f443f1562beec8df51c75e14a9fcf9a7234a13f198e7969",
+    "warnOnly": true
+  },
+  "2": {
+    "expected": "3d458cfe55cc03ea1f443f1562beec8df51c75e14a9fcf9a7234a13f198e7969",
+    "warnOnly": true
+  },
+  "3": {
+    "expected": "3d458cfe55cc03ea1f443f1562beec8df51c75e14a9fcf9a7234a13f198e7969",
+    "warnOnly": true
+  },
+  "4": {
+    "expected": "82736cdd6b4f3c718bf969b545eaaa6eb3f1e6d229ad9712e6a4ddf431418ab7",
+    "warnOnly": false
+  },
+  "5": {
+    "expected": "54c04bcd7cf8adadafee915bf325f92d958050c14e086c1e180258113d376c1a",
+    "warnOnly": true
+  },
+  "6": {
+    "expected": "9319868ef4dad6a79117f14b9ac1870ccf5f9d178b39a3fd84e6230fa93a7993",
+    "warnOnly": true
+  },
+  "7": {
+    "expected": "32fe42b385b47cb22c906b8a7e4f134e9f2270818f90e94072d1101ef72f1c00",
+    "warnOnly": true
+  },
+  "8": {
+    "expected": "0000000000000000000000000000000000000000000000000000000000000000",
+    "warnOnly": false
+  },
+  "9": {
+    "expected": "0000000000000000000000000000000000000000000000000000000000000000",
+    "warnOnly": false
+  },
+  "11": {
+    "expected": "0000000000000000000000000000000000000000000000000000000000000000",
+    "warnOnly": false
+  },
+  "12": {
+    "expected": "f1a142c53586e7e2223ec74e5f4d1a4942956b1fd9ac78fafcdf85117aa345da",
+    "warnOnly": false
+  },
+  "13": {
+    "expected": "0000000000000000000000000000000000000000000000000000000000000000",
+    "warnOnly": false
+  },
+  "14": {
+    "expected": "e3991b7ddd47be7e92726a832d6874c5349b52b789fa0db8b558c69fea29574e",
+    "warnOnly": true
+  },
+  "15": {
+    "expected": "0000000000000000000000000000000000000000000000000000000000000000",
+    "warnOnly": false
+  }
+}
+EOF
+)
+```
+
+```
+# Add the SEV execution node
+curl -d "{\"uri\":\"https://SEV_${MEASUREMENTS}@foo\"}" localhost:8080/nodes
+```
+
+Execution nodes running within SEV and providing attestation consumables via constellations aTLS implementation are supported. The aTLS certificate of the execution node is automatically attested with the VM measurements which are submitted as part of the user part of the **node URI** (`SEV_<gzipped, base64url encoded measurements>`). You can read more about the attestation measurements in the [constellation docs](https://docs.edgeless.systems/constellation/architecture/attestation#runtime-measurements)
+
 #### SGX Node RA-TLS attestation
-
-```
-# build prio-load-balancer with sgx support
-make build-sgx
-```
-
-> **IMPORTANT:** SGX attestation support requires additional dependencies. See [Dockerfile.sgx](Dockerfile.sgx) for details.
-
 ```
 # Add an SGX execution node
 curl -d '{"uri":"https://SGX_<MRENCLAVE>@foo"}' localhost:8080/nodes
 ```
 
 Execution nodes running within SGX and providing attestation consumables via RA-TLS are supported. The RA-TLS certificate of the execution node is automatically attested with the `MRENCLAVE` which is submitted as part of the user part of **node URI** (`SGX_<MRENCLAVE>`).
-
 
 ---
 

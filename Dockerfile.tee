@@ -3,7 +3,7 @@ FROM golang:1.20 as builder
 ARG VERSION
 WORKDIR /build
 ADD . /build/
-RUN --mount=type=cache,target=/root/.cache/go-build GOOS=linux go build --tags sgx -trimpath -ldflags "-s -X main.version=$VERSION" -v -o prio-load-balancer main.go
+RUN --mount=type=cache,target=/root/.cache/go-build GOOS=linux go build --tags tee -trimpath -ldflags "-s -X main.version=$VERSION" -v -o prio-load-balancer main.go
 
 FROM ubuntu:20.04 as repos
 RUN apt-get update && \
