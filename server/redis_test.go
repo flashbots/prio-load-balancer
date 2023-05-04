@@ -7,8 +7,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var redisTestServer *miniredis.Miniredis
-var redisTestState *RedisState
+var (
+	redisTestServer *miniredis.Miniredis
+	redisTestState  *RedisState
+)
 
 func resetTestRedis() {
 	var err error

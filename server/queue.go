@@ -17,9 +17,9 @@ type PrioQueue struct {
 	highPrio  []*SimRequest
 	lowPrio   []*SimRequest
 
-	cond            *sync.Cond
-	closed          atomic.Bool
-	nextIsFastTrack atomic.Bool
+	cond       *sync.Cond
+	closed     atomic.Bool
+	nFastTrack atomic.Int32
 
 	maxFastTrack int // max items for fast-track queue. 0 means no limit.
 	maxHighPrio  int // max items for high prio queue. 0 means no limit.
@@ -104,7 +104,19 @@ func (q *PrioQueue) Pop() (nextReq *SimRequest) {
 		q.cond.Wait()
 	}
 
-	if q.nextIsFastTrack.Toggle() {
+	// decide whether to start with fast-track or high-prio queue
+	processFastTrack := len(q.fastTrack) > 0
+	if processFastTrack {
+		// only fast-track every so often
+		if q.nFastTrack.Inc() > int32(FastTrackPerHighPrio) {
+			q.nFastTrack.Store(0)
+			processFastTrack = false
+		}
+	} else {
+		q.nFastTrack.Store(0)
+	}
+
+	if processFastTrack { // check fast-track queue first
 		if len(q.fastTrack) > 0 {
 			nextReq = q.fastTrack[0]
 			q.fastTrack = q.fastTrack[1:]
@@ -115,7 +127,7 @@ func (q *PrioQueue) Pop() (nextReq *SimRequest) {
 			nextReq = q.lowPrio[0]
 			q.lowPrio = q.lowPrio[1:]
 		}
-	} else {
+	} else { // check high-prio queue first
 		if len(q.highPrio) > 0 {
 			nextReq = q.highPrio[0]
 			q.highPrio = q.highPrio[1:]

@@ -28,6 +28,12 @@ lint-strict: lint
 	gofumpt -d -extra .
 	golangci-lint run
 
+fmt:
+	gofmt -s -w .
+	gofumpt -extra -w .
+	gci write .
+	go mod tidy
+
 cover:
 	go test -coverprofile=/tmp/go-prio-lb.cover.tmp ./...
 	go tool cover -func /tmp/go-prio-lb.cover.tmp

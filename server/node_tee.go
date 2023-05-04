@@ -10,20 +10,18 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
-	"fmt"
-
-	"go.uber.org/zap"
-
-	ratls "github.com/konvera/gramine-ratls-golang"
 
 	"github.com/konvera/geth-sev/constellation/atls"
 	"github.com/konvera/geth-sev/constellation/attestation/azure/snp"
 	"github.com/konvera/geth-sev/constellation/config"
+	ratls "github.com/konvera/gramine-ratls-golang"
+	"go.uber.org/zap"
 )
 
 func init() {
@@ -34,9 +32,8 @@ func init() {
 }
 
 type attestationLogger struct {
-	log           *zap.SugaredLogger
+	log *zap.SugaredLogger
 }
-
 
 func (w attestationLogger) Infof(format string, args ...any) {
 	w.log.Infow(fmt.Sprintf(format, args...))
@@ -54,8 +51,7 @@ func NewNode(log *zap.SugaredLogger, uri string, jobC chan *SimRequest, numWorke
 	}
 	username := pURL.User.Username()
 
-	// SGX TLS config
-	if strings.HasPrefix(username, "SGX_") {
+	if strings.HasPrefix(username, "SGX_") { // SGX TLS config
 		mrenclave, err := hex.DecodeString(strings.TrimPrefix(username, "SGX_"))
 		if err != nil {
 			return nil, err
@@ -72,20 +68,19 @@ func NewNode(log *zap.SugaredLogger, uri string, jobC chan *SimRequest, numWorke
 				},
 			},
 		}
-	// SEV TLS config
-	} else if strings.HasPrefix(username, "SEV_") {
+	} else if strings.HasPrefix(username, "SEV_") { // SEV TLS config
 		gzmeasurements, err := base64.URLEncoding.DecodeString(strings.TrimPrefix(username, "SEV_"))
 		if err != nil {
 			return nil, err
 		}
 
-		gzreader, err := gzip.NewReader(bytes.NewReader(gzmeasurements));
-		if(err != nil){
+		gzreader, err := gzip.NewReader(bytes.NewReader(gzmeasurements))
+		if err != nil {
 			return nil, err
 		}
 
-		measurements, err := ioutil.ReadAll(gzreader);
-		if(err != nil){
+		measurements, err := ioutil.ReadAll(gzreader)
+		if err != nil {
 			return nil, err
 		}
 
@@ -95,7 +90,7 @@ func NewNode(log *zap.SugaredLogger, uri string, jobC chan *SimRequest, numWorke
 			return nil, err
 		}
 
-		validators := []atls.Validator{ snp.NewValidator(attConfig, attestationLogger{log}) }
+		validators := []atls.Validator{snp.NewValidator(attConfig, attestationLogger{log})}
 		tlsConfig, err := atls.CreateAttestationClientTLSConfig(nil, validators)
 		if err != nil {
 			return nil, err
