@@ -24,14 +24,20 @@ type PrioQueue struct {
 	maxFastTrack int // max items for fast-track queue. 0 means no limit.
 	maxHighPrio  int // max items for high prio queue. 0 means no limit.
 	maxLowPrio   int // max items for low prio queue. 0 means no limit.
+
+	numFastTrackForHighPrio int
+	fastTrackDrainFirst     bool
 }
 
-func NewPrioQueue(maxFastTrack, maxHighPrio, maxLowPrio int) *PrioQueue {
+func NewPrioQueue(maxFastTrack, maxHighPrio, maxLowPrio, numFastTrackForHighPrio int, fastTrackDrainFirst bool) *PrioQueue {
 	return &PrioQueue{
 		cond:         sync.NewCond(&sync.Mutex{}),
 		maxFastTrack: maxFastTrack,
 		maxHighPrio:  maxHighPrio,
 		maxLowPrio:   maxLowPrio,
+
+		numFastTrackForHighPrio: numFastTrackForHighPrio,
+		fastTrackDrainFirst:     fastTrackDrainFirst,
 	}
 }
 
@@ -106,14 +112,16 @@ func (q *PrioQueue) Pop() (nextReq *SimRequest) {
 
 	// decide whether to start with fast-track or high-prio queue
 	processFastTrack := len(q.fastTrack) > 0
-	if processFastTrack {
-		// only fast-track every so often
-		if q.nFastTrack.Inc() > int32(FastTrackPerHighPrio) {
+	if !q.fastTrackDrainFirst {
+		if processFastTrack {
+			// only fast-track every so often
+			if q.nFastTrack.Inc() > int32(q.numFastTrackForHighPrio) {
+				q.nFastTrack.Store(0)
+				processFastTrack = false
+			}
+		} else {
 			q.nFastTrack.Store(0)
-			processFastTrack = false
 		}
-	} else {
-		q.nFastTrack.Store(0)
 	}
 
 	if processFastTrack { // check fast-track queue first

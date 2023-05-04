@@ -1,6 +1,7 @@
 package server
 
 import (
+	"os"
 	"time"
 
 	"go.uber.org/zap"
@@ -17,6 +18,7 @@ var (
 
 	// How often fast-track queue items should be popped before popping a high-priority item
 	FastTrackPerHighPrio = GetEnvInt("ITEMS_FASTTRACK_PER_HIGHPRIO", 2)
+	FastTrackDrainFirst  = os.Getenv("FASTTRACK_DRAIN_FIRST") == "1" // whether to fully drain the fast-track queue first
 
 	RequestTimeout       = time.Duration(GetEnvInt("REQUEST_TIMEOUT", 5)) * time.Second       // Time between creation and receive in the node worker, after which a SimRequest will not be processed anymore
 	ServerJobSendTimeout = time.Duration(GetEnvInt("JOB_SEND_TIMEOUT", 2)) * time.Second      // How long the server tries to send a job into the nodepool for processing
@@ -30,6 +32,7 @@ func LogConfig(log *zap.SugaredLogger) {
 		"MaxQueueItemsHighPrio", MaxQueueItemsHighPrio,
 		"MaxQueueItemsLowPrio", MaxQueueItemsLowPrio,
 		"FastTrackPerHighPrio", FastTrackPerHighPrio,
+		"FastTrackDrainFirst", FastTrackDrainFirst,
 		"PayloadMaxBytes", PayloadMaxBytes,
 		"RequestTimeout", RequestTimeout,
 		"ServerJobSendTimeout", ServerJobSendTimeout,

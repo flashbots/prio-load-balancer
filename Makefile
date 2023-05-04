@@ -20,9 +20,11 @@ test:
 	go test ./...
 
 lint:
-	gofmt -d ./
+	gofmt -d -s .
+	gofumpt -d -extra .
 	go vet ./...
 	staticcheck ./...
+	# golangci-lint run
 
 lint-strict: lint
 	gofumpt -d -extra .

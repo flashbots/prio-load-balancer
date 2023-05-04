@@ -45,7 +45,7 @@ func fillQueue(t *testing.T, q *PrioQueue) {
 }
 
 func TestQueueBlockingPop(t *testing.T) {
-	q := NewPrioQueue(0, 0, 0)
+	q := NewPrioQueue(0, 0, 0, 2, false)
 	taskLowPrio := NewSimRequest([]byte("taskLowPrio"), false, false)
 
 	// Ensure queue.Pop is blocking
@@ -59,9 +59,8 @@ func TestQueueBlockingPop(t *testing.T) {
 
 func TestQueuePopping(t *testing.T) {
 	// Test 1 - expected: fastTrack -> highPrio -> fastTrack -> highPrio
-	q := NewPrioQueue(0, 0, 0)
+	q := NewPrioQueue(0, 0, 0, 1, false)
 	fillQueue(t, q)
-	FastTrackPerHighPrio = 1
 	for i := 0; i < 5; i++ {
 		x := q.Pop()
 		fmt.Println("fast:", x.IsFastTrack, "high-prio:", x.IsHighPrio)
@@ -79,10 +78,9 @@ func TestQueuePopping(t *testing.T) {
 	require.Equal(t, 0, len(q.lowPrio))
 	require.Equal(t, 0, len(q.highPrio))
 
-	// Test 2 - expected: fastTrack -> highPrio -> fastTrack -> highPrio
-	q = NewPrioQueue(0, 0, 0)
+	// Test 2 - expected: 2x fastTrack -> 1x highPrio
+	q = NewPrioQueue(0, 0, 0, 2, false)
 	fillQueue(t, q)
-	FastTrackPerHighPrio = 2
 	require.Equal(t, true, q.Pop().IsFastTrack)
 	require.Equal(t, true, q.Pop().IsFastTrack)
 	require.Equal(t, true, q.Pop().IsHighPrio)
@@ -90,10 +88,20 @@ func TestQueuePopping(t *testing.T) {
 	require.Equal(t, true, q.Pop().IsFastTrack)
 	require.Equal(t, true, q.Pop().IsHighPrio)
 	require.Equal(t, true, q.Pop().IsFastTrack)
+
+	// Test 3 - expected: all fastTrack -> all highPrio
+	q = NewPrioQueue(0, 0, 0, 2, true)
+	fillQueue(t, q)
+	for i := 0; i < 5; i++ {
+		require.Equal(t, true, q.Pop().IsFastTrack)
+	}
+	for i := 0; i < 11; i++ {
+		require.Equal(t, true, q.Pop().IsHighPrio)
+	}
 }
 
 func TestPrioQueueMultipleReaders(t *testing.T) {
-	q := NewPrioQueue(0, 0, 0)
+	q := NewPrioQueue(0, 0, 0, 2, false)
 	taskLowPrio := NewSimRequest([]byte("taskLowPrio"), false, false)
 
 	counts := make(map[int]int)
@@ -136,7 +144,7 @@ func TestPrioQueueMultipleReaders(t *testing.T) {
 }
 
 func TestPrioQueueVarious(t *testing.T) {
-	q := NewPrioQueue(0, 0, 0)
+	q := NewPrioQueue(0, 0, 0, 2, false)
 	q.Push(nil)
 	require.Equal(t, 0, len(q.highPrio))
 	require.Equal(t, 0, len(q.lowPrio))
@@ -146,7 +154,7 @@ func TestPrioQueueVarious(t *testing.T) {
 
 // Test used for benchmark: single reader
 func _testPrioQueue1(numWorkers, numItems int) *PrioQueue {
-	q := NewPrioQueue(0, 0, 0)
+	q := NewPrioQueue(0, 0, 0, 2, false)
 	taskLowPrio := NewSimRequest([]byte("taskLowPrio"), false, false)
 
 	var wg sync.WaitGroup
