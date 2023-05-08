@@ -130,5 +130,4 @@ func (n *Node) ProxyRequest(payload []byte, timeout time.Duration) (resp []byte,
 	}
 
 	return httpRespBody, statusCode, nil
-
 }

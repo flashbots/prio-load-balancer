@@ -20,13 +20,21 @@ test:
 	go test ./...
 
 lint:
-	gofmt -d ./
+	gofmt -d -s .
+	gofumpt -d -extra .
 	go vet ./...
 	staticcheck ./...
+	# golangci-lint run
 
 lint-strict: lint
 	gofumpt -d -extra .
 	golangci-lint run
+
+fmt:
+	gofmt -s -w .
+	gofumpt -extra -w .
+	gci write .
+	go mod tidy
 
 cover:
 	go test -coverprofile=/tmp/go-prio-lb.cover.tmp ./...

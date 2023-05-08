@@ -30,7 +30,7 @@ func NewServer(opts ServerOpts) (*Server, error) {
 	s := Server{
 		opts:      opts,
 		log:       opts.Log,
-		prioQueue: NewPrioQueue(MaxQueueItemsFastTrack, MaxQueueItemsHighPrio, MaxQueueItemsLowPrio),
+		prioQueue: NewPrioQueue(MaxQueueItemsFastTrack, MaxQueueItemsHighPrio, MaxQueueItemsLowPrio, FastTrackPerHighPrio, FastTrackDrainFirst),
 	}
 
 	if s.opts.RedisURI == "" {

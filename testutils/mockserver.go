@@ -11,8 +11,10 @@ import (
 	"go.uber.org/zap"
 )
 
-var testLogger, _ = zap.NewDevelopment()
-var testLog = testLogger.Sugar()
+var (
+	testLogger, _ = zap.NewDevelopment()
+	testLog       = testLogger.Sugar()
+)
 
 type MockNodeBackend struct {
 	LastRawRequest              *http.Request

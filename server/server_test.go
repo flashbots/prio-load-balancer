@@ -14,9 +14,11 @@ import (
 	"go.uber.org/zap"
 )
 
-var testServerListenAddr = "localhost:9498"
-var testLogger, _ = zap.NewDevelopment()
-var testLog = testLogger.Sugar()
+var (
+	testServerListenAddr = "localhost:9498"
+	testLogger, _        = zap.NewDevelopment()
+	testLog              = testLogger.Sugar()
+)
 
 func TestServerWithoutRedis(t *testing.T) {
 	s, err := NewServer(ServerOpts{testLog, testServerListenAddr, "", 1})

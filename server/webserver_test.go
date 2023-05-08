@@ -19,7 +19,7 @@ import (
 func TestWebserver(t *testing.T) {
 	resetTestRedis()
 
-	prioQueue := NewPrioQueue(0, 0, 0)
+	prioQueue := NewPrioQueue(0, 0, 0, 2, false)
 	nodePool := NewNodePool(testLog, redisTestState, 1)
 	webserver := NewWebserver(testLog, ":12345", prioQueue, nodePool)
 
@@ -100,7 +100,7 @@ func TestWebserverSim(t *testing.T) {
 	mockNodeBackend := testutils.NewMockNodeBackend()
 	mockNodeServer := httptest.NewServer(http.HandlerFunc(mockNodeBackend.Handler))
 
-	prioQueue := NewPrioQueue(0, 0, 0)
+	prioQueue := NewPrioQueue(0, 0, 0, 2, false)
 	nodePool := NewNodePool(testLog, nil, 1)
 	nodePool.AddNode(mockNodeServer.URL)
 	webserver := NewWebserver(testLog, ":12345", prioQueue, nodePool)
