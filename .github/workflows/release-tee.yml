@@ -37,7 +37,8 @@ jobs:
             suffix=-tee,onlatest=true
           tags: |
             type=sha
-            type=semver,pattern={{version}}
+            type=pep440,pattern={{version}}
+            type=pep440,pattern={{major}}.{{minor}}
             type=raw,value=latest,enable=${{ !contains(env.RELEASE_VERSION, '-') }}
 
       - name: Login to DockerHub
