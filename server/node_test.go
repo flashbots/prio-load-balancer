@@ -70,3 +70,23 @@ func TestNodeError(t *testing.T) {
 	require.Contains(t, res.Error.Error(), "479")
 	require.Equal(t, 479, res.StatusCode)
 }
+
+func TestWorkersArg(t *testing.T) {
+	mockNodeBackend1 := testutils.NewMockNodeBackend()
+	mockNodeServer1 := httptest.NewServer(http.HandlerFunc(mockNodeBackend1.Handler))
+	jobC := make(chan *SimRequest)
+
+	node, err := NewNode(testLog, mockNodeServer1.URL, jobC, 1)
+	require.Nil(t, err, err)
+	require.Equal(t, int32(1), node.numWorkers)
+
+	uriWithWorkers := mockNodeServer1.URL + "?workers=4"
+	node, err = NewNode(testLog, uriWithWorkers, jobC, 1)
+	require.Nil(t, err, err)
+	require.Equal(t, int32(4), node.numWorkers)
+
+	uriWithWorkers = mockNodeServer1.URL + "?workers=6"
+	node, err = NewNode(testLog, uriWithWorkers, jobC, 1)
+	require.Nil(t, err, err)
+	require.Equal(t, int32(6), node.numWorkers)
+}
