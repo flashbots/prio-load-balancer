@@ -26,6 +26,8 @@ lint:
 	staticcheck ./...
 	# golangci-lint run
 
+lt: lint test
+
 lint-strict: lint
 	gofumpt -d -extra .
 	golangci-lint run
