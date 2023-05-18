@@ -51,6 +51,18 @@ func NewNode(log *zap.SugaredLogger, uri string, jobC chan *SimRequest, numWorke
 	}
 	username := pURL.User.Username()
 
+	workersArg := url.Query().Get("_workers")
+	if workersArg != "" {
+		// set numWorkers from query param
+		workersInt, err := strconv.Atoi(workersArg)
+		if err != nil {
+			log.Errorw("Error parsing workers query param", "err", err, "uri", uri)
+		} else {
+			log.Infow("Using custom number of workers", "workers", workersInt, "uri", uri)
+			numWorkers = int32(workersInt)
+		}
+	}
+
 	if strings.HasPrefix(username, "SGX_") { // SGX TLS config
 		mrenclave, err := hex.DecodeString(strings.TrimPrefix(username, "SGX_"))
 		if err != nil {
