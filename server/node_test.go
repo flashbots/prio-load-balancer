@@ -80,12 +80,12 @@ func TestWorkersArg(t *testing.T) {
 	require.Nil(t, err, err)
 	require.Equal(t, int32(1), node.numWorkers)
 
-	uriWithWorkers := mockNodeServer1.URL + "?workers=4"
+	uriWithWorkers := mockNodeServer1.URL + "?_workers=4"
 	node, err = NewNode(testLog, uriWithWorkers, jobC, 1)
 	require.Nil(t, err, err)
 	require.Equal(t, int32(4), node.numWorkers)
 
-	uriWithWorkers = mockNodeServer1.URL + "?workers=6"
+	uriWithWorkers = mockNodeServer1.URL + "?_workers=6"
 	node, err = NewNode(testLog, uriWithWorkers, jobC, 1)
 	require.Nil(t, err, err)
 	require.Equal(t, int32(6), node.numWorkers)

@@ -18,9 +18,9 @@ func NewNode(log *zap.SugaredLogger, uri string, jobC chan *SimRequest, numWorke
 		return nil, err
 	}
 
-	if url.Query().Get("workers") != "" {
+	workersArg := url.Query().Get("_workers")
+	if workersArg != "" {
 		// set numWorkers from query param
-		workersArg := url.Query().Get("workers")
 		workersInt, err := strconv.Atoi(workersArg)
 		if err != nil {
 			log.Errorw("Error parsing workers query param", "err", err, "uri", uri)
