@@ -1,6 +1,8 @@
 # High/Low Prio Load Balancer
 
+[![Goreport status](https://goreportcard.com/badge/github.com/flashbots/prio-load-balancer)](https://goreportcard.com/report/github.com/flashbots/prio-load-balancer)
 [![Test status](https://github.com/flashbots/prio-load-balancer/workflows/Checks/badge.svg)](https://github.com/flashbots/prio-load-balancer/actions?query=workflow%3A%22Checks%22)
+[![Docker hub](https://badgen.net/docker/size/flashbots/prio-load-balancer?icon=docker&label=image)](https://hub.docker.com/r/flashbots/prio-load-balancer/tags)
 
 **Transparent jsonrpc/http proxy and load balancer with high and low priority queue and retries.**
 
