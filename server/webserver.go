@@ -65,12 +65,22 @@ func (s *Webserver) HandleQueueRequest(w http.ResponseWriter, req *http.Request)
 	defer req.Body.Close()
 
 	args := req.URL.Query()
+
+	// Allow single `?reqID=...` log field
 	reqID := args.Get("reqID")
 	log := s.log
 	if reqID != "" {
 		log = s.log.With("reqID", reqID)
 	}
 
+	// Allow multiple reqID log fields: `?reqID:name=something&reqID:name2=also_something`
+	for k := range args {
+		if strings.HasPrefix(k, "reqID:") {
+			log = log.With(k, args.Get(k))
+		}
+	}
+
+	// Read the body and start processing
 	body, err := io.ReadAll(req.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
