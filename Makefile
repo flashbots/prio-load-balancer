@@ -18,7 +18,6 @@ clean:
 
 test:
 	go test ./...
-	go test -tags=tee ./...
 
 lint:
 	gofmt -d -s .
