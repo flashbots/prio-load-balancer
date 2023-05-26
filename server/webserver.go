@@ -64,14 +64,14 @@ func (s *Webserver) HandleQueueRequest(w http.ResponseWriter, req *http.Request)
 	startTime := time.Now().UTC()
 	defer req.Body.Close()
 
-	// Allow single `reqID:...` log field via header
+	// Allow single `X-Request-ID:...` log field via header
 	reqID := req.Header.Get("X-Request-ID")
 	log := s.log
 	if reqID != "" {
 		log = s.log.With("reqID", reqID)
 	}
 
-	// Allow multiple reqID log fields through `reqID/ABC:...` headers
+	// Allow multiple reqID log fields through `X-Request-ID/ABC:...` headers
 	for k := range req.Header {
 		if strings.HasPrefix(k, "X-Request-ID/") {
 			idTag := "reqID/" + strings.TrimPrefix(k, "X-Request-ID/")
