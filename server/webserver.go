@@ -65,7 +65,7 @@ func (s *Webserver) HandleQueueRequest(w http.ResponseWriter, req *http.Request)
 	defer req.Body.Close()
 
 	// Allow single `reqID:...` log field via header
-	reqID := req.Header.Get("reqID")
+	reqID := req.Header.Get("X-Request-ID")
 	log := s.log
 	if reqID != "" {
 		log = s.log.With("reqID", reqID)
@@ -73,8 +73,9 @@ func (s *Webserver) HandleQueueRequest(w http.ResponseWriter, req *http.Request)
 
 	// Allow multiple reqID log fields through `reqID/ABC:...` headers
 	for k := range req.Header {
-		if strings.HasPrefix(k, "reqID/") {
-			log = log.With(k, req.Header.Get(k))
+		if strings.HasPrefix(k, "X-Request-ID/") {
+			idTag := "reqID/" + strings.TrimPrefix(k, "X-Request-ID/")
+			log = log.With(idTag, req.Header.Get(k))
 		}
 	}
 
