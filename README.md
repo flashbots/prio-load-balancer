@@ -1,17 +1,30 @@
-# High/Low Prio Load Balancer
+# Transparent JSON-RPC proxy and load balancer
 
 [![Goreport status](https://goreportcard.com/badge/github.com/flashbots/prio-load-balancer)](https://goreportcard.com/report/github.com/flashbots/prio-load-balancer)
 [![Test status](https://github.com/flashbots/prio-load-balancer/workflows/Checks/badge.svg)](https://github.com/flashbots/prio-load-balancer/actions?query=workflow%3A%22Checks%22)
 [![Docker hub](https://badgen.net/docker/size/flashbots/prio-load-balancer?icon=docker&label=image)](https://hub.docker.com/r/flashbots/prio-load-balancer/tags)
 
-**Transparent jsonrpc/http proxy and load balancer with priority queue and retries.**
+**With priority queues, retries, good logging and metrics, and even SGX/SEV attestation support.**
 
-Queues: (1) low-prio, (2) high-prio, (3) fast-track
+Queues:
+
+1. low-prio
+2. high-prio
+3. fast-track
 
 Queueing:
 
 - All high-prio requests will be proxied before any of the low-prio queue
-- N fast-tracked requests get processed for every 1 high-prio request
+- [N](https://github.com/flashbots/prio-load-balancer/blob/main/server/consts.go#L20) fast-tracked requests get processed for every 1 high-prio request
+
+Further notes:
+
+- A _node_ represents one JSON-RPC endpoint (i.e. geth instance)
+- Each node spins up N workers, which proxy requests concurrently to the execution endpoint
+- You can add/remove nodes through a JSON API without restarting the server
+- Each node starts the default number of workers, but you can also specify a custom number of workers by adding `?_workers=` to the node URL
+- It's possible to tweak [a few knobs](/server/consts.go)
+<!-- - The load balancer exposes a HTTP API for managing nodes, and uses Redis as a source of truth for configured nodes (i.e. the cli node config only sets the initial state in redis, but a restart won't override the node setup created through the HTTP API. -->
 
 ---
 
@@ -30,17 +43,17 @@ At the end of a request:
     "caller": "server/webserver.go:154",
     "msg": "Request completed",
     "service": "validation-queue",
-    "durationMs": 1434,
+    "durationMs": 144,
     "requestIsHighPrio": true,
     "requestIsFastTrack": false,
     "payloadSize": 209394,
     "statusCode": 200,
     "nodeURI": "http://validation-1.internal:8545",
     "requestTries": 1,
-    "queueItems": 51,
+    "queueItems": 11,
     "queueItemsFastTrack": 0,
-    "queueItemsHighPrio": 37,
-    "queueItemsLowPrio": 14
+    "queueItemsHighPrio": 7,
+    "queueItemsLowPrio": 4
 }
 ```
 
@@ -67,7 +80,8 @@ Docker images are available at https://hub.docker.com/r/flashbots/prio-load-bala
 
 ```bash
 # Run with a mock execution backend and debug output
-go run . -mock-node
+go run . -mock-node           # text logging
+go run . -mock-node -log-prod # json logging
 
 # low-prio queue request
 curl -d '{"jsonrpc":"2.0","method":"eth_callBundle","params":[],"id":1}' localhost:8080
@@ -86,6 +100,9 @@ curl localhost:8080/nodes
 
 # Add a execution node
 curl -d '{"uri":"http://foo"}' localhost:8080/nodes
+
+# Add a execution node with custom number of workers
+curl -d '{"uri":"http://foo?_workers=8"}' localhost:8080/nodes
 
 # Remove a execution node
 curl -X DELETE -d '{"uri":"http://foo"}' localhost:8080/nodes
@@ -233,11 +250,8 @@ BenchmarkPrioQueueMultiReader-12    	     261	   4637403 ns/op	 4245243 B/op	   
 
 Possibly
 
-* Currently it works for jsonrpc requests. To make it work for any http request it would need to also proxy the headers and the URL.
-* Queue rules: i.e. for 10 high-prio items, process 1 low-prio item
 * Configurable redis prefix, to allow multiple sim-lbs per redis instance
 * Execution-node health checks (currently not implemented)
-* DoS protection / rate limiting (i.e. per IP)
 
 ---
 
