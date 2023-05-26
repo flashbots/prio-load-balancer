@@ -24,7 +24,8 @@ var (
 	ServerJobSendTimeout = time.Duration(GetEnvInt("JOB_SEND_TIMEOUT", 2)) * time.Second      // How long the server tries to send a job into the nodepool for processing
 	ProxyRequestTimeout  = time.Duration(GetEnvInt("REQUEST_PROXY_TIMEOUT", 3)) * time.Second // HTTP request timeout for proxy requests to the backend node
 
-	RedisPrefix = GetEnv("REDIS_PREFIX", "prio-load-balancer:")
+	RedisPrefix        = GetEnv("REDIS_PREFIX", "prio-load-balancer:") // All redis keys will be prefixed with this
+	EnableErrorTestAPI = os.Getenv("ENABLE_ERROR_TEST_API") == "1"     // will enable /debug/testLogLevels which prints errors and ends with a panic (also enabled if mock-node is used)
 )
 
 func LogConfig(log *zap.SugaredLogger) {
@@ -39,5 +40,7 @@ func LogConfig(log *zap.SugaredLogger) {
 		"RequestTimeout", RequestTimeout,
 		"ServerJobSendTimeout", ServerJobSendTimeout,
 		"ProxyRequestTimeout", ProxyRequestTimeout,
+		"RedisPrefix", RedisPrefix,
+		"EnableErrorTestAPI", EnableErrorTestAPI,
 	)
 }

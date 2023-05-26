@@ -42,7 +42,7 @@ func LoggingMiddleware(log *zap.SugaredLogger, next http.Handler) http.Handler {
 			defer func() {
 				if err := recover(); err != nil {
 					w.WriteHeader(http.StatusInternalServerError)
-					log.Infow(fmt.Sprintf("http request panic: %s %s", r.Method, r.URL.EscapedPath()),
+					log.Errorw(fmt.Sprintf("http request panic: %s %s", r.Method, r.URL.EscapedPath()),
 						"err", err,
 						"trace", debug.Stack(),
 					)

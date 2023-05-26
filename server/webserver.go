@@ -39,6 +39,10 @@ func (s *Webserver) Start() {
 	r.HandleFunc("/nodes", s.HandleNodesRequest).Methods(http.MethodGet, http.MethodPost, http.MethodDelete)
 	r.PathPrefix("/debug/pprof/").Handler(http.DefaultServeMux)
 
+	if EnableErrorTestAPI {
+		r.HandleFunc("/debug/testLogLevels", s.HandleTestLogLevels).Methods(http.MethodGet)
+	}
+
 	loggedRouter := LoggingMiddleware(s.log, r)
 
 	s.srv = &http.Server{
@@ -208,4 +212,16 @@ func (s *Webserver) HandleNodesRequest(w http.ResponseWriter, req *http.Request)
 
 		w.WriteHeader(http.StatusOK)
 	}
+}
+
+// HandleTestLogLevels is used for testing error logging, to verify for operations. Is opt-in with `ENABLE_ERROR_TEST_API=1`
+func (s *Webserver) HandleTestLogLevels(w http.ResponseWriter, req *http.Request) {
+	s.log.Debug("debug")
+	s.log.Infow("info", "key", "value")
+	s.log.Warnw("warn", "key", "value")
+	s.log.Errorw("error", "key", "value")
+	// s.log.Fatalw("fatal", "key", "value")
+	// s.log.Panicw("panic", "key", "value")
+	panic("panic")
+	// w.WriteHeader(http.StatusOK)
 }
