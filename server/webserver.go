@@ -148,7 +148,21 @@ func (s *Webserver) HandleQueueRequest(w http.ResponseWriter, req *http.Request)
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(resp.StatusCode)
 			w.Write(resp.Payload)
-			log.Infow("Request completed", "durationMs", time.Since(startTime).Milliseconds(), "requestIsHighPrio", isHighPrio, "requestIsFastTrack", isFastTrack, "payloadSize", len(body), "statusCode", resp.StatusCode, "nodeURI", resp.NodeURI, "requestTries", simReq.Tries, "queueItems", s.prioQueue.NumRequests())
+
+			lenFastTrack, lenHighPrio, lenLowPrio := s.prioQueue.Len()
+			log.Infow("Request completed",
+				"durationMs", time.Since(startTime).Milliseconds(),
+				"requestIsHighPrio", isHighPrio,
+				"requestIsFastTrack", isFastTrack,
+				"payloadSize", len(body),
+				"statusCode", resp.StatusCode,
+				"nodeURI", resp.NodeURI,
+				"requestTries", simReq.Tries,
+				"queueItems", s.prioQueue.NumRequests(),
+				"queueItemsFastTrack", lenFastTrack,
+				"queueItemsHighPrio", lenHighPrio,
+				"queueItemsLowPrio", lenLowPrio,
+			)
 			return
 		}
 	}
