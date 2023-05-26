@@ -14,6 +14,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -51,7 +52,7 @@ func NewNode(log *zap.SugaredLogger, uri string, jobC chan *SimRequest, numWorke
 	}
 	username := pURL.User.Username()
 
-	workersArg := url.Query().Get("_workers")
+	workersArg := pURL.Query().Get("_workers")
 	if workersArg != "" {
 		// set numWorkers from query param
 		workersInt, err := strconv.Atoi(workersArg)

@@ -13,12 +13,12 @@ import (
 )
 
 func NewNode(log *zap.SugaredLogger, uri string, jobC chan *SimRequest, numWorkers int32) (*Node, error) {
-	url, err := url.ParseRequestURI(uri)
+	pURL, err := url.ParseRequestURI(uri)
 	if err != nil {
 		return nil, err
 	}
 
-	workersArg := url.Query().Get("_workers")
+	workersArg := pURL.Query().Get("_workers")
 	if workersArg != "" {
 		// set numWorkers from query param
 		workersInt, err := strconv.Atoi(workersArg)

@@ -30,6 +30,9 @@ jobs:
     - name: Lint
       run: make lint
 
+    - name: Build
+      run: make build build-tee
+
     - name: Ensure go mod tidy runs without changes
       run: |
         go mod tidy

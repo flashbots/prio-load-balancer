@@ -63,6 +63,23 @@ func (s *Webserver) HandleRootRequest(w http.ResponseWriter, req *http.Request) 
 func (s *Webserver) HandleQueueRequest(w http.ResponseWriter, req *http.Request) {
 	startTime := time.Now().UTC()
 	defer req.Body.Close()
+
+	// Allow single `X-Request-ID:...` log field via header
+	reqID := req.Header.Get("X-Request-ID")
+	log := s.log
+	if reqID != "" {
+		log = s.log.With("reqID", reqID)
+	}
+
+	// Allow multiple reqID log fields through `X-Request-ID/ABC:...` headers
+	for k := range req.Header {
+		if strings.HasPrefix(k, "X-Request-ID/") {
+			idTag := "reqID/" + strings.TrimPrefix(k, "X-Request-ID/")
+			log = log.With(idTag, req.Header.Get(k))
+		}
+	}
+
+	// Read the body and start processing
 	body, err := io.ReadAll(req.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -76,7 +93,7 @@ func (s *Webserver) HandleQueueRequest(w http.ResponseWriter, req *http.Request)
 
 	ctx := req.Context()
 	if ctx.Err() != nil {
-		s.log.Infow("client closed the connection before processing", "err", ctx.Err())
+		log.Infow("client closed the connection before processing", "err", ctx.Err())
 		return
 	}
 
@@ -86,26 +103,26 @@ func (s *Webserver) HandleQueueRequest(w http.ResponseWriter, req *http.Request)
 	simReq := NewSimRequest(body, isHighPrio, isFastTrack)
 	wasAdded := s.prioQueue.Push(simReq)
 	if !wasAdded { // queue was full, job not added
-		s.log.Error("Couldn't add request, queue is full")
+		log.Error("Couldn't add request, queue is full")
 		http.Error(w, "queue full", http.StatusInternalServerError)
 		return
 	}
 
 	lenFastTrack, lenHighPrio, lenLowPrio := s.prioQueue.Len()
-	s.log.Infow("Request added to queue. prioQueue size:", "requestIsHighPrio", isHighPrio, "requestIsFastTrack", isFastTrack, "fastTrack", lenFastTrack, "highPrio", lenHighPrio, "lowPrio", lenLowPrio)
+	log.Infow("Request added to queue. prioQueue size:", "requestIsHighPrio", isHighPrio, "requestIsFastTrack", isFastTrack, "fastTrack", lenFastTrack, "highPrio", lenHighPrio, "lowPrio", lenLowPrio)
 
 	// Wait for response or cancel
 	for {
 		select {
 		case <-ctx.Done(): // if user closes connection, cancel the simreq
-			s.log.Infow("client closed the connection prematurely", "err", ctx.Err(), "queueItems", s.prioQueue.NumRequests(), "payloadSize", len(body), "requestTries", simReq.Tries, "requestCancelled", simReq.Cancelled)
+			log.Infow("client closed the connection prematurely", "err", ctx.Err(), "queueItems", s.prioQueue.NumRequests(), "payloadSize", len(body), "requestTries", simReq.Tries, "requestCancelled", simReq.Cancelled)
 			if ctx.Err() != nil {
 				simReq.Cancelled = true
 			}
 			return
 		case resp := <-simReq.ResponseC:
 			if resp.Error != nil {
-				s.log.Infow("HandleSim error", "err", resp.Error, "try", simReq.Tries, "shouldRetry", resp.ShouldRetry)
+				log.Infow("HandleSim error", "err", resp.Error, "try", simReq.Tries, "shouldRetry", resp.ShouldRetry, "nodeURI", resp.NodeURI)
 				if simReq.Tries < RequestMaxTries && resp.ShouldRetry {
 					s.prioQueue.Push(simReq)
 					continue
@@ -132,7 +149,21 @@ func (s *Webserver) HandleQueueRequest(w http.ResponseWriter, req *http.Request)
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(resp.StatusCode)
 			w.Write(resp.Payload)
-			s.log.Infow("Request completed", "durationMs", time.Since(startTime).Milliseconds(), "requestIsHighPrio", isHighPrio, "requestIsFastTrack", isFastTrack, "payloadSize", len(body))
+
+			lenFastTrack, lenHighPrio, lenLowPrio := s.prioQueue.Len()
+			log.Infow("Request completed",
+				"durationMs", time.Since(startTime).Milliseconds(),
+				"requestIsHighPrio", isHighPrio,
+				"requestIsFastTrack", isFastTrack,
+				"payloadSize", len(body),
+				"statusCode", resp.StatusCode,
+				"nodeURI", resp.NodeURI,
+				"requestTries", simReq.Tries,
+				"queueItems", s.prioQueue.NumRequests(),
+				"queueItemsFastTrack", lenFastTrack,
+				"queueItemsHighPrio", lenHighPrio,
+				"queueItemsLowPrio", lenLowPrio,
+			)
 			return
 		}
 	}

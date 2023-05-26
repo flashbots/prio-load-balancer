@@ -39,4 +39,5 @@ type SimResponse struct {
 	Payload     []byte
 	Error       error
 	ShouldRetry bool // When response has an error, whether it should be retried
+	NodeURI     string
 }

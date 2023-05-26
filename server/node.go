@@ -54,13 +54,13 @@ func (n *Node) startProxyWorker(id int32, cancelContext context.Context) {
 			payload, statusCode, err := n.ProxyRequest(req.Payload, ProxyRequestTimeout)
 			if err != nil {
 				n.log.Errorw("node proxyRequest error", "uri", n.URI, "error", err)
-				response := SimResponse{StatusCode: statusCode, Payload: payload, Error: err, ShouldRetry: true}
+				response := SimResponse{StatusCode: statusCode, Payload: payload, Error: err, ShouldRetry: true, NodeURI: n.URI}
 				req.SendResponse(response)
 				continue
 			}
 
 			// Send response
-			sent := req.SendResponse(SimResponse{Payload: payload})
+			sent := req.SendResponse(SimResponse{Payload: payload, NodeURI: n.URI})
 			if !sent {
 				n.log.Errorw("couldn't send node response to client (SendResponse returned false)", "secSinceRequestCreated", time.Since(req.CreatedAt).Seconds())
 			}

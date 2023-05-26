@@ -23,8 +23,11 @@ lint:
 	gofmt -d -s .
 	gofumpt -d -extra .
 	go vet ./...
+	go vet --tags=tee ./...
 	staticcheck ./...
 	# golangci-lint run
+
+lt: lint test
 
 lint-strict: lint
 	gofumpt -d -extra .
