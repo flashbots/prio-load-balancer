@@ -8,10 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-var (
-	RedisPrefix   = "prio-load-balancer:"
-	RedisKeyNodes = RedisPrefix + "prio-load-balancer:nodes"
-)
+var RedisKeyNodes = RedisPrefix + "prio-load-balancer:nodes"
 
 type RedisState struct {
 	RedisClient *redis.Client
