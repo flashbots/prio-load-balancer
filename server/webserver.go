@@ -72,14 +72,6 @@ func (s *Webserver) HandleQueueRequest(w http.ResponseWriter, req *http.Request)
 		log = s.log.With("reqID", reqID)
 	}
 
-	// Allow multiple reqID log fields through `X-Request-ID/ABC:...` headers
-	for k := range req.Header {
-		if strings.HasPrefix(k, "X-Request-ID/") {
-			idTag := "reqID/" + strings.TrimPrefix(k, "X-Request-ID/")
-			log = log.With(idTag, req.Header.Get(k))
-		}
-	}
-
 	// Read the body and start processing
 	body, err := io.ReadAll(req.Body)
 	if err != nil {
