@@ -4,15 +4,56 @@
 [![Test status](https://github.com/flashbots/prio-load-balancer/workflows/Checks/badge.svg)](https://github.com/flashbots/prio-load-balancer/actions?query=workflow%3A%22Checks%22)
 [![Docker hub](https://badgen.net/docker/size/flashbots/prio-load-balancer?icon=docker&label=image)](https://hub.docker.com/r/flashbots/prio-load-balancer/tags)
 
-**Transparent jsonrpc/http proxy and load balancer with high and low priority queue and retries.**
+**Transparent jsonrpc/http proxy and load balancer with priority queue and retries.**
 
-In the current setup, all requests in the high priority queue will be proxied before any of the low-prio queue.
+Queueing:
+
+- All high-prio requests will be proxied before any of the low-prio queue
+- N fast-tracked requests get processed for every 1 high-prio request
 
 ---
 
-**App structure and request flow:**
+### Application structure and request flow
 
 ![App structure and request flow](https://user-images.githubusercontent.com/116939/202170917-bcd98c98-f40e-4025-8084-06adec27ff96.png)
+
+### Example logs
+
+At the end of a request:
+
+```json
+{
+    "level": "info",
+    "ts": 1685122704.4079978,
+    "caller": "server/webserver.go:154",
+    "msg": "Request completed",
+    "service": "validation-queue",
+    "durationMs": 1434,
+    "requestIsHighPrio": true,
+    "requestIsFastTrack": false,
+    "payloadSize": 209394,
+    "statusCode": 200,
+    "nodeURI": "http://validation-1.internal:8545",
+    "requestTries": 1,
+    "queueItems": 51,
+    "queueItemsFastTrack": 0,
+    "queueItemsHighPrio": 37,
+    "queueItemsLowPrio": 14
+}
+```
+
+Full request cycle:
+
+```json
+// request getting added to the queue
+{"level":"info","ts":1685126514.8569882,"caller":"server/webserver.go:112","msg":"Request added to queue. prioQueue size:","service":"validation-queue","requestIsHighPrio":true,"requestIsFastTrack":true,"fastTrack":1,"highPrio":0,"lowPrio":0}
+
+// completed request
+{"level":"info","ts":1685126514.9174724,"caller":"server/webserver.go:154","msg":"Request completed","service":"validation-queue","durationMs":78,"requestIsHighPrio":true,"requestIsFastTrack":true,"payloadSize":121291,"statusCode":200,"nodeURI":"http://validation-2.internal:8545","requestTries":1,"queueItems":0,"queueItemsFastTrack":0,"queueItemsHighPrio":0,"queueItemsLowPrio":0}
+
+// http server logs
+{"level":"info","ts":1685126514.9175296,"caller":"server/http_logger.go:54","msg":"http: POST /sim 200","service":"validation-queue","status":200,"method":"POST","path":"/sim","duration":0.078877451}
+```
 
 ---
 
