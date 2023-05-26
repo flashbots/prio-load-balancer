@@ -6,6 +6,8 @@
 
 **Transparent jsonrpc/http proxy and load balancer with priority queue and retries.**
 
+Queues: (1) low-prio, (2) high-prio, (3) fast-track
+
 Queueing:
 
 - All high-prio requests will be proxied before any of the low-prio queue
@@ -67,11 +69,17 @@ Docker images are available at https://hub.docker.com/r/flashbots/prio-load-bala
 # Run with a mock execution backend and debug output
 go run . -mock-node
 
-# add request for low-prio queue
+# low-prio queue request
 curl -d '{"jsonrpc":"2.0","method":"eth_callBundle","params":[],"id":1}' localhost:8080
 
-# add request for high-prio queue
-curl -H 'X-High-Priority' -d '{"jsonrpc":"2.0","method":"eth_callBundle","params":[],"id":1}' localhost:8080
+# high-prio queue request
+curl -H 'X-High-Priority: true' -d '{"jsonrpc":"2.0","method":"eth_callBundle","params":[],"id":1}' localhost:8080
+
+# fast-track queue request
+curl -H 'X-Fast-Track: true' -d '{"jsonrpc":"2.0","method":"eth_callBundle","params":[],"id":1}' localhost:8080
+
+# adding a custom request ID
+curl -H 'X-Request-ID: yourLogID' -d '{"jsonrpc":"2.0","method":"eth_callBundle","params":[],"id":1}' localhost:8080
 
 # Get execution nodes
 curl localhost:8080/nodes
