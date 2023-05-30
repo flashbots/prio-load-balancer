@@ -43,5 +43,6 @@ func LogConfig(log *zap.SugaredLogger) {
 		"ProxyRequestTimeout", ProxyRequestTimeout,
 		"RedisPrefix", RedisPrefix,
 		"EnableErrorTestAPI", EnableErrorTestAPI,
+		"EnablePprof", EnablePprof,
 	)
 }
