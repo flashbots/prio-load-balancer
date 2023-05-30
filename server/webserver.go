@@ -37,9 +37,14 @@ func (s *Webserver) Start() {
 	r.HandleFunc("/", s.HandleQueueRequest).Methods(http.MethodPost)
 	r.HandleFunc("/sim", s.HandleQueueRequest).Methods(http.MethodPost)
 	r.HandleFunc("/nodes", s.HandleNodesRequest).Methods(http.MethodGet, http.MethodPost, http.MethodDelete)
-	r.PathPrefix("/debug/pprof/").Handler(http.DefaultServeMux)
+
+	if EnablePprof {
+		s.log.Info("Enabling pprof")
+		r.PathPrefix("/debug/pprof/").Handler(http.DefaultServeMux)
+	}
 
 	if EnableErrorTestAPI {
+		s.log.Info("Enabling error testing API")
 		r.HandleFunc("/debug/testLogLevels", s.HandleTestLogLevels).Methods(http.MethodGet)
 	}
 
