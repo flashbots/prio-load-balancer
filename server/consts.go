@@ -26,6 +26,7 @@ var (
 
 	RedisPrefix        = GetEnv("REDIS_PREFIX", "prio-load-balancer:") // All redis keys will be prefixed with this
 	EnableErrorTestAPI = os.Getenv("ENABLE_ERROR_TEST_API") == "1"     // will enable /debug/testLogLevels which prints errors and ends with a panic (also enabled if mock-node is used)
+	EnablePprof        = os.Getenv("ENABLE_PPROF") == "1"              // will enable /debug/pprof
 )
 
 func LogConfig(log *zap.SugaredLogger) {

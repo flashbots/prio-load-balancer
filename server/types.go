@@ -4,6 +4,7 @@ import "time"
 
 type SimRequest struct {
 	// can be none of, or one of high-prio / fast-track
+	ID          string
 	IsHighPrio  bool
 	IsFastTrack bool
 
@@ -14,8 +15,9 @@ type SimRequest struct {
 	Tries     int
 }
 
-func NewSimRequest(payload []byte, isHighPrio, IsFastTrack bool) *SimRequest {
+func NewSimRequest(id string, payload []byte, isHighPrio, IsFastTrack bool) *SimRequest {
 	return &SimRequest{
+		ID:          id,
 		Payload:     payload,
 		IsHighPrio:  isHighPrio,
 		IsFastTrack: IsFastTrack,
@@ -40,4 +42,5 @@ type SimResponse struct {
 	Error       error
 	ShouldRetry bool // When response has an error, whether it should be retried
 	NodeURI     string
+	SimDuration time.Duration
 }

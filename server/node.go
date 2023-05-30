@@ -33,40 +33,57 @@ func (n *Node) HealthCheck() error {
 }
 
 func (n *Node) startProxyWorker(id int32, cancelContext context.Context) {
-	n.log.Infow("starting proxy node worker", "uri", n.URI, "id", id)
+	log := n.log.With(
+		"uri", n.URI,
+		"id", id,
+	)
+	log.Infow("starting proxy node worker")
 	atomic.AddInt32(&n.curWorkers, 1)
 	defer atomic.AddInt32(&n.curWorkers, -1)
 
 	for {
 		select {
 		case req := <-n.jobC:
+			_log := log.With("reqID", req.ID)
+			_log.Info("processing request")
+
 			if req.Cancelled {
+				_log.Info("request was cancelled before processing")
 				continue
 			}
 
 			if time.Since(req.CreatedAt) > RequestTimeout {
-				n.log.Info("request timed out before processing")
+				_log.Info("request timed out before processing")
 				req.SendResponse(SimResponse{Error: ErrRequestTimeout})
 				continue
 			}
 
 			req.Tries += 1
+			timeBeforeProxy := time.Now().UTC()
 			payload, statusCode, err := n.ProxyRequest(req.Payload, ProxyRequestTimeout)
+			requestDuration := time.Since(timeBeforeProxy)
+			_log = _log.With("requestDurationUS", requestDuration.Microseconds())
 			if err != nil {
-				n.log.Errorw("node proxyRequest error", "uri", n.URI, "error", err)
+				// if not context deadline exceeded
+				if errors.Is(err, context.DeadlineExceeded) {
+					_log.Infow("node proxyRequest error: context deatline exeeded", "uri", n.URI, "error", err)
+				} else {
+					_log.Errorw("node proxyRequest error", "uri", n.URI, "error", err)
+				}
 				response := SimResponse{StatusCode: statusCode, Payload: payload, Error: err, ShouldRetry: true, NodeURI: n.URI}
 				req.SendResponse(response)
 				continue
 			}
 
 			// Send response
-			sent := req.SendResponse(SimResponse{Payload: payload, NodeURI: n.URI})
+			_log.Debug("request processed, sending response")
+			sent := req.SendResponse(SimResponse{Payload: payload, NodeURI: n.URI, SimDuration: requestDuration})
 			if !sent {
-				n.log.Errorw("couldn't send node response to client (SendResponse returned false)", "secSinceRequestCreated", time.Since(req.CreatedAt).Seconds())
+				_log.Errorw("couldn't send node response to client (SendResponse returned false)", "secSinceRequestCreated", time.Since(req.CreatedAt).Seconds())
 			}
 
 		case <-cancelContext.Done():
-			n.log.Infow("node worker stopped", "uri", n.URI, "id", id)
+			log.Infow("node worker stopped")
 			return
 		}
 	}

@@ -21,7 +21,7 @@ func TestNode(t *testing.T) {
 	err = node.HealthCheck()
 	require.Nil(t, err, err)
 
-	request := NewSimRequest([]byte("foo"), true, false)
+	request := NewSimRequest("1", []byte("foo"), true, false)
 	node.StartWorkers()
 	node.jobC <- request
 	res := <-request.ResponseC
@@ -60,7 +60,7 @@ func TestNodeError(t *testing.T) {
 	require.Equal(t, 479, statusCode)
 
 	// Check failing SimRequest
-	request := NewSimRequest([]byte("foo"), true, false)
+	request := NewSimRequest("1", []byte("foo"), true, false)
 	node.StartWorkers()
 	node.jobC <- request
 	res := <-request.ResponseC

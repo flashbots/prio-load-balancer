@@ -89,7 +89,10 @@ func main() {
 		log.Info("Using mock node backend", "listenAddr", addr)
 		go http.ListenAndServe(addr, nil)
 		perr(srv.AddNode("http://" + addr))
+
+		// enable additional APIs in dev mode by default
 		server.EnableErrorTestAPI = true // will be used later, in srv.Start()
+		server.EnablePprof = true
 	}
 
 	if *nodesPtr != "" {

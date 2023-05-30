@@ -37,9 +37,14 @@ func (s *Webserver) Start() {
 	r.HandleFunc("/", s.HandleQueueRequest).Methods(http.MethodPost)
 	r.HandleFunc("/sim", s.HandleQueueRequest).Methods(http.MethodPost)
 	r.HandleFunc("/nodes", s.HandleNodesRequest).Methods(http.MethodGet, http.MethodPost, http.MethodDelete)
-	r.PathPrefix("/debug/pprof/").Handler(http.DefaultServeMux)
+
+	if EnablePprof {
+		s.log.Info("Enabling pprof")
+		r.PathPrefix("/debug/pprof/").Handler(http.DefaultServeMux)
+	}
 
 	if EnableErrorTestAPI {
+		s.log.Info("Enabling error testing API")
 		r.HandleFunc("/debug/testLogLevels", s.HandleTestLogLevels).Methods(http.MethodGet)
 	}
 
@@ -97,7 +102,7 @@ func (s *Webserver) HandleQueueRequest(w http.ResponseWriter, req *http.Request)
 	// Add new sim request to queue
 	isFastTrack := req.Header.Get("X-Fast-Track") == "true"
 	isHighPrio := req.Header.Get("high_prio") == "true" || req.Header.Get("X-High-Priority") == "true"
-	simReq := NewSimRequest(body, isHighPrio, isFastTrack)
+	simReq := NewSimRequest(reqID, body, isHighPrio, isFastTrack)
 	wasAdded := s.prioQueue.Push(simReq)
 	if !wasAdded { // queue was full, job not added
 		log.Error("Couldn't add request, queue is full")
@@ -150,6 +155,8 @@ func (s *Webserver) HandleQueueRequest(w http.ResponseWriter, req *http.Request)
 			lenFastTrack, lenHighPrio, lenLowPrio := s.prioQueue.Len()
 			log.Infow("Request completed",
 				"durationMs", time.Since(startTime).Milliseconds(),
+				"durationUs", time.Since(startTime).Microseconds(),
+				"simDurationUs", resp.SimDuration.Microseconds(),
 				"requestIsHighPrio", isHighPrio,
 				"requestIsFastTrack", isFastTrack,
 				"payloadSize", len(body),
