@@ -45,7 +45,7 @@ func (n *Node) startProxyWorker(id int32, cancelContext context.Context) {
 		select {
 		case req := <-n.jobC:
 			_log := log.With("reqID", req.ID)
-			_log.Info("processing request")
+			_log.Debug("processing request")
 
 			if req.Cancelled {
 				_log.Info("request was cancelled before processing")
