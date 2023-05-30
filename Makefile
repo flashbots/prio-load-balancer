@@ -7,6 +7,9 @@ all: clean build
 v:
 	@echo "Version: ${VERSION}"
 
+run-dev:
+	go run . -mock-node -log-prod
+
 build:
 	go build -trimpath -ldflags "-s -X main.version=${VERSION}" -v -o prio-load-balancer main.go
 
