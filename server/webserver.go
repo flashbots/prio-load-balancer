@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	_ "net/http/pprof"
+	"strconv"
 	"strings"
 	"time"
 
@@ -70,13 +71,29 @@ func (s *Webserver) HandleRootRequest(w http.ResponseWriter, req *http.Request) 
 	fmt.Fprintf(w, "prio-load-balancer\n")
 }
 
+func getMsIntoSlot(slot uint64) int64 {
+	if slot == 0 {
+		return 0
+	}
+	slotStartTimestamp := int64(GenesisTime) + (int64(slot) * int64(SecPerSlot))
+	return time.Now().UTC().UnixMilli() - (slotStartTimestamp * 1000)
+}
+
 func (s *Webserver) HandleQueueRequest(w http.ResponseWriter, req *http.Request) {
+	log := s.log
 	startTime := time.Now().UTC()
 	defer req.Body.Close()
 
-	// Allow single `X-Request-ID:...` log field via header
+	// Allow `X-Request-Slot:...` header, which prints slot and ms into slot in logs
+	var reqSlot uint64
+	reqSlotStr := req.Header.Get("X-Request-Slot")
+	if reqSlotStr != "" {
+		reqSlot, _ = strconv.ParseUint(reqSlotStr, 10, 64)
+		log = log.With("slot", reqSlot)
+	}
+
+	// Allow single `X-Request-ID:...` header, which will be logged as `reqID`
 	reqID := req.Header.Get("X-Request-ID")
-	log := s.log
 	if reqID != "" {
 		log = s.log.With("reqID", reqID)
 	}
@@ -111,20 +128,20 @@ func (s *Webserver) HandleQueueRequest(w http.ResponseWriter, req *http.Request)
 	}
 
 	lenFastTrack, lenHighPrio, lenLowPrio := s.prioQueue.Len()
-	log.Infow("Request added to queue. prioQueue size:", "requestIsHighPrio", isHighPrio, "requestIsFastTrack", isFastTrack, "fastTrack", lenFastTrack, "highPrio", lenHighPrio, "lowPrio", lenLowPrio)
+	log.Infow("Request added to queue. prioQueue size:", "requestIsHighPrio", isHighPrio, "requestIsFastTrack", isFastTrack, "fastTrack", lenFastTrack, "highPrio", lenHighPrio, "lowPrio", lenLowPrio, "msIntoSlot", getMsIntoSlot(reqSlot))
 
 	// Wait for response or cancel
 	for {
 		select {
 		case <-ctx.Done(): // if user closes connection, cancel the simreq
-			log.Infow("client closed the connection prematurely", "err", ctx.Err(), "queueItems", s.prioQueue.NumRequests(), "payloadSize", len(body), "requestTries", simReq.Tries, "requestCancelled", simReq.Cancelled)
+			log.Infow("client closed the connection prematurely", "err", ctx.Err(), "queueItems", s.prioQueue.NumRequests(), "payloadSize", len(body), "requestTries", simReq.Tries, "requestCancelled", simReq.Cancelled, "msIntoSlot", getMsIntoSlot(reqSlot))
 			if ctx.Err() != nil {
 				simReq.Cancelled = true
 			}
 			return
 		case resp := <-simReq.ResponseC:
 			if resp.Error != nil {
-				log.Infow("HandleSim error", "err", resp.Error, "try", simReq.Tries, "shouldRetry", resp.ShouldRetry, "nodeURI", resp.NodeURI)
+				log.Infow("HandleSim error", "err", resp.Error, "try", simReq.Tries, "shouldRetry", resp.ShouldRetry, "nodeURI", resp.NodeURI, "msIntoSlot", getMsIntoSlot(reqSlot))
 				if simReq.Tries < RequestMaxTries && resp.ShouldRetry {
 					s.prioQueue.Push(simReq)
 					continue
@@ -167,6 +184,7 @@ func (s *Webserver) HandleQueueRequest(w http.ResponseWriter, req *http.Request)
 				"queueItemsFastTrack", lenFastTrack,
 				"queueItemsHighPrio", lenHighPrio,
 				"queueItemsLowPrio", lenLowPrio,
+				"msIntoSlot", getMsIntoSlot(reqSlot),
 			)
 			return
 		}
