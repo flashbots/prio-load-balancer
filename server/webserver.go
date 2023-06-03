@@ -111,20 +111,30 @@ func (s *Webserver) HandleQueueRequest(w http.ResponseWriter, req *http.Request)
 	}
 
 	lenFastTrack, lenHighPrio, lenLowPrio := s.prioQueue.Len()
-	log.Infow("Request added to queue. prioQueue size:", "requestIsHighPrio", isHighPrio, "requestIsFastTrack", isFastTrack, "fastTrack", lenFastTrack, "highPrio", lenHighPrio, "lowPrio", lenLowPrio)
+	log = log.With(
+		"requestIsHighPrio", isHighPrio,
+		"requestIsFastTrack", isFastTrack,
+		"payloadSize", len(body),
+
+		"startQueueSize", s.prioQueue.NumRequests(),
+		"startQueueSizeFastTrack", lenFastTrack,
+		"startQueueSizeHighPrio", lenHighPrio,
+		"startQueueSizeLowPrio", lenLowPrio,
+	)
+	log.Infow("Request added to queue")
 
 	// Wait for response or cancel
 	for {
 		select {
 		case <-ctx.Done(): // if user closes connection, cancel the simreq
-			log.Infow("client closed the connection prematurely", "err", ctx.Err(), "queueItems", s.prioQueue.NumRequests(), "payloadSize", len(body), "requestTries", simReq.Tries, "requestCancelled", simReq.Cancelled)
+			log.Infow("Client closed the connection prematurely", "err", ctx.Err(), "queueItems", s.prioQueue.NumRequests(), "payloadSize", len(body), "requestTries", simReq.Tries, "requestCancelled", simReq.Cancelled)
 			if ctx.Err() != nil {
 				simReq.Cancelled = true
 			}
 			return
 		case resp := <-simReq.ResponseC:
 			if resp.Error != nil {
-				log.Infow("HandleSim error", "err", resp.Error, "try", simReq.Tries, "shouldRetry", resp.ShouldRetry, "nodeURI", resp.NodeURI)
+				log.Infow("Request proxying failed", "err", resp.Error, "try", simReq.Tries, "shouldRetry", resp.ShouldRetry, "nodeURI", resp.NodeURI)
 				if simReq.Tries < RequestMaxTries && resp.ShouldRetry {
 					s.prioQueue.Push(simReq)
 					continue
@@ -154,19 +164,19 @@ func (s *Webserver) HandleQueueRequest(w http.ResponseWriter, req *http.Request)
 
 			lenFastTrack, lenHighPrio, lenLowPrio := s.prioQueue.Len()
 			log.Infow("Request completed",
-				"durationMs", time.Since(startTime).Milliseconds(),
-				"durationUs", time.Since(startTime).Microseconds(),
-				"simDurationUs", resp.SimDuration.Microseconds(),
-				"requestIsHighPrio", isHighPrio,
-				"requestIsFastTrack", isFastTrack,
-				"payloadSize", len(body),
+				"durationMs", time.Since(startTime).Milliseconds(), // full request duration in milliseconds
+				"durationUs", time.Since(startTime).Microseconds(), // full request duration in microseconds
+				"simDurationUs", resp.SimDuration.Microseconds(), // time only for simulation (proxying)
+				"queueDurationUs", resp.SimAt.Sub(startTime).Microseconds(), // time until request was proxied (queue wait time)
+
 				"statusCode", resp.StatusCode,
 				"nodeURI", resp.NodeURI,
 				"requestTries", simReq.Tries,
-				"queueItems", s.prioQueue.NumRequests(),
-				"queueItemsFastTrack", lenFastTrack,
-				"queueItemsHighPrio", lenHighPrio,
-				"queueItemsLowPrio", lenLowPrio,
+
+				"endQueueSize", s.prioQueue.NumRequests(),
+				"endQueueSizeFastTrack", lenFastTrack,
+				"endQueueSizeHighPrio", lenHighPrio,
+				"endQueueSizeLowPrio", lenLowPrio,
 			)
 			return
 		}
