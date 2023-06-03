@@ -110,16 +110,23 @@ func (s *Webserver) HandleQueueRequest(w http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	lenFastTrack, lenHighPrio, lenLowPrio := s.prioQueue.Len()
+	startQueueSizeFastTrack, startQueueSizeHighPrio, startQueueSizeLowPrio := s.prioQueue.Len()
+	startItemQueueSize := startQueueSizeLowPrio
+	if isFastTrack {
+		startItemQueueSize = startQueueSizeFastTrack
+	} else if isHighPrio {
+		startItemQueueSize = startQueueSizeHighPrio
+	}
+
 	log = log.With(
 		"requestIsHighPrio", isHighPrio,
 		"requestIsFastTrack", isFastTrack,
 		"payloadSize", len(body),
 
 		"startQueueSize", s.prioQueue.NumRequests(),
-		"startQueueSizeFastTrack", lenFastTrack,
-		"startQueueSizeHighPrio", lenHighPrio,
-		"startQueueSizeLowPrio", lenLowPrio,
+		"startQueueSizeFastTrack", startQueueSizeFastTrack,
+		"startQueueSizeHighPrio", startQueueSizeHighPrio,
+		"startQueueSizeLowPrio", startQueueSizeLowPrio,
 	)
 	log.Infow("Request added to queue")
 
@@ -158,25 +165,41 @@ func (s *Webserver) HandleQueueRequest(w http.ResponseWriter, req *http.Request)
 				resp.StatusCode = http.StatusOK
 			}
 
+			queueDurationUs := resp.SimAt.Sub(startTime).Microseconds()
+			endQueueSizeFastTrack, endQueueSizeHighPrio, endQueueSizeLowPrio := s.prioQueue.Len()
+			endItemQueueSize := endQueueSizeLowPrio
+			if isFastTrack {
+				endItemQueueSize = endQueueSizeFastTrack
+			} else if isHighPrio {
+				endItemQueueSize = endQueueSizeHighPrio
+			}
+
+			// Add additional profiling information about this request as part of the response headers
+			w.Header().Set("X-PrioLB-QueueDurationUs", fmt.Sprint(queueDurationUs))
+			w.Header().Set("X-PrioLB-SimDurationUs", fmt.Sprint(resp.SimDuration.Microseconds()))
+			w.Header().Set("X-PrioLB-TotalDurationUs", fmt.Sprint(time.Since(startTime).Microseconds()))
+			w.Header().Set("X-PrioLB-QueueSizeStart", fmt.Sprint(startItemQueueSize))
+			w.Header().Set("X-PrioLB-QueueSizeEnd", fmt.Sprint(endItemQueueSize))
+
+			// Send the response
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(resp.StatusCode)
 			w.Write(resp.Payload)
 
-			lenFastTrack, lenHighPrio, lenLowPrio := s.prioQueue.Len()
 			log.Infow("Request completed",
 				"durationMs", time.Since(startTime).Milliseconds(), // full request duration in milliseconds
 				"durationUs", time.Since(startTime).Microseconds(), // full request duration in microseconds
 				"simDurationUs", resp.SimDuration.Microseconds(), // time only for simulation (proxying)
-				"queueDurationUs", resp.SimAt.Sub(startTime).Microseconds(), // time until request was proxied (queue wait time)
+				"queueDurationUs", queueDurationUs, // time until request was proxied (queue wait time)
 
 				"statusCode", resp.StatusCode,
 				"nodeURI", resp.NodeURI,
 				"requestTries", simReq.Tries,
 
 				"endQueueSize", s.prioQueue.NumRequests(),
-				"endQueueSizeFastTrack", lenFastTrack,
-				"endQueueSizeHighPrio", lenHighPrio,
-				"endQueueSizeLowPrio", lenLowPrio,
+				"endQueueSizeFastTrack", endQueueSizeFastTrack,
+				"endQueueSizeHighPrio", endQueueSizeHighPrio,
+				"endQueueSizeLowPrio", endQueueSizeLowPrio,
 			)
 			return
 		}
