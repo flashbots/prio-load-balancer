@@ -43,4 +43,5 @@ type SimResponse struct {
 	ShouldRetry bool // When response has an error, whether it should be retried
 	NodeURI     string
 	SimDuration time.Duration
+	SimAt       time.Time // time when proxying started
 }

@@ -77,7 +77,7 @@ func (n *Node) startProxyWorker(id int32, cancelContext context.Context) {
 
 			// Send response
 			_log.Debug("request processed, sending response")
-			sent := req.SendResponse(SimResponse{Payload: payload, NodeURI: n.URI, SimDuration: requestDuration})
+			sent := req.SendResponse(SimResponse{Payload: payload, NodeURI: n.URI, SimDuration: requestDuration, SimAt: timeBeforeProxy})
 			if !sent {
 				_log.Errorw("couldn't send node response to client (SendResponse returned false)", "secSinceRequestCreated", time.Since(req.CreatedAt).Seconds())
 			}
