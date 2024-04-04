@@ -8,16 +8,19 @@ type SimRequest struct {
 	IsHighPrio  bool
 	IsFastTrack bool
 
-	Payload   []byte
+	TargetPath string
+	Payload    []byte
+
 	ResponseC chan SimResponse
 	Cancelled bool
 	CreatedAt time.Time
 	Tries     int
 }
 
-func NewSimRequest(id string, payload []byte, isHighPrio, IsFastTrack bool) *SimRequest {
+func NewSimRequest(id string, payload []byte, isHighPrio, IsFastTrack bool, targetPath string) *SimRequest {
 	return &SimRequest{
 		ID:          id,
+		TargetPath:  targetPath,
 		Payload:     payload,
 		IsHighPrio:  isHighPrio,
 		IsFastTrack: IsFastTrack,
