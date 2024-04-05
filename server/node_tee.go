@@ -109,8 +109,13 @@ func NewNode(log *zap.SugaredLogger, uri string, jobC chan *SimRequest, numWorke
 			return nil, err
 		}
 		client = http.Client{
+			Timeout: ProxyRequestTimeout,
 			Transport: &http.Transport{
-				TLSClientConfig: tlsConfig,
+				TLSClientConfig:     tlsConfig,
+				MaxIdleConns:        ProxyMaxIdleConns,
+				MaxConnsPerHost:     ProxyMaxConnsPerHost,
+				MaxIdleConnsPerHost: ProxyMaxIdleConnsPerHost,
+				IdleConnTimeout:     ProxyIdleConnTimeout,
 			},
 		}
 	}

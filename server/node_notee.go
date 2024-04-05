@@ -39,10 +39,10 @@ func NewNode(log *zap.SugaredLogger, uri string, jobC chan *SimRequest, numWorke
 		client: &http.Client{
 			Timeout: ProxyRequestTimeout,
 			Transport: &http.Transport{
-				MaxIdleConns:        100,
-				MaxConnsPerHost:     100,
-				MaxIdleConnsPerHost: 100,
-				IdleConnTimeout:     90 * time.Second,
+				MaxIdleConns:        ProxyMaxIdleConns,
+				MaxConnsPerHost:     ProxyMaxConnsPerHost,
+				MaxIdleConnsPerHost: ProxyMaxIdleConnsPerHost,
+				IdleConnTimeout:     ProxyIdleConnTimeout,
 			},
 		},
 	}
