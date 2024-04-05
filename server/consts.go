@@ -27,6 +27,11 @@ var (
 	RedisPrefix        = GetEnv("REDIS_PREFIX", "prio-load-balancer:") // All redis keys will be prefixed with this
 	EnableErrorTestAPI = os.Getenv("ENABLE_ERROR_TEST_API") == "1"     // will enable /debug/testLogLevels which prints errors and ends with a panic (also enabled if mock-node is used)
 	EnablePprof        = os.Getenv("ENABLE_PPROF") == "1"              // will enable /debug/pprof
+
+	ProxyMaxIdleConns        = GetEnvInt("ProxyMaxIdleConns", 100)
+	ProxyMaxConnsPerHost     = GetEnvInt("ProxyMaxConnsPerHost", 100)
+	ProxyMaxIdleConnsPerHost = GetEnvInt("ProxyMaxIdleConnsPerHost", 100)
+	ProxyIdleConnTimeout     = time.Duration(GetEnvInt("ProxyIdleConnTimeout", 90)) * time.Second
 )
 
 func LogConfig(log *zap.SugaredLogger) {
@@ -44,5 +49,9 @@ func LogConfig(log *zap.SugaredLogger) {
 		"RedisPrefix", RedisPrefix,
 		"EnableErrorTestAPI", EnableErrorTestAPI,
 		"EnablePprof", EnablePprof,
+		"ProxyMaxIdleConns", ProxyMaxIdleConns,
+		"ProxyMaxConnsPerHost", ProxyMaxConnsPerHost,
+		"ProxyMaxIdleConnsPerHost", ProxyMaxIdleConnsPerHost,
+		"ProxyIdleConnTimeout", ProxyIdleConnTimeout,
 	)
 }
