@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
+	"path"
 	"strconv"
 	"sync/atomic"
 	"time"
@@ -16,7 +18,7 @@ import (
 
 type Node struct {
 	log           *zap.SugaredLogger
-	URI           string
+	URI           string // base Hostname
 	AddedAt       time.Time
 	jobC          chan *SimRequest
 	numWorkers    int32
@@ -28,7 +30,7 @@ type Node struct {
 
 func (n *Node) HealthCheck() error {
 	payload := `{"jsonrpc":"2.0","method":"net_version","params":[],"id":123}`
-	_, _, err := n.ProxyRequest([]byte(payload), 5*time.Second)
+	_, _, err := n.ProxyRequest("", []byte(payload), 5*time.Second)
 	return err
 }
 
@@ -60,7 +62,7 @@ func (n *Node) startProxyWorker(id int32, cancelContext context.Context) {
 
 			req.Tries += 1
 			timeBeforeProxy := time.Now().UTC()
-			payload, statusCode, err := n.ProxyRequest(req.Payload, ProxyRequestTimeout)
+			payload, statusCode, err := n.ProxyRequest(req.TargetPath, req.Payload, ProxyRequestTimeout)
 			requestDuration := time.Since(timeBeforeProxy)
 			_log = _log.With("requestDurationUS", requestDuration.Microseconds())
 			if err != nil {
@@ -117,10 +119,17 @@ func (n *Node) StopWorkersAndWait() {
 	}
 }
 
-func (n *Node) ProxyRequest(payload []byte, timeout time.Duration) (resp []byte, statusCode int, err error) {
+func (n *Node) ProxyRequest(targetPath string, payload []byte, timeout time.Duration) (resp []byte, statusCode int, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", n.URI, bytes.NewBuffer(payload))
+
+	url, err := url.Parse(n.URI)
+	if err != nil {
+		return resp, statusCode, err
+	}
+	url.Path = path.Join(url.Path, targetPath)
+
+	httpReq, err := http.NewRequestWithContext(ctx, "POST", url.String(), bytes.NewBuffer(payload))
 	if err != nil {
 		return resp, statusCode, errors.Wrap(err, "creating proxy request failed")
 	}
