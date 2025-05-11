@@ -102,7 +102,7 @@ func (s *Webserver) HandleQueueRequest(w http.ResponseWriter, req *http.Request)
 	// Add new sim request to queue
 	isFastTrack := req.Header.Get("X-Fast-Track") == "true"
 	isHighPrio := req.Header.Get("high_prio") == "true" || req.Header.Get("X-High-Priority") == "true"
-	simReq := NewSimRequest(reqID, body, isHighPrio, isFastTrack)
+	simReq := NewSimRequest(ctx, reqID, body, isHighPrio, isFastTrack)
 	wasAdded := s.prioQueue.Push(simReq)
 	if !wasAdded { // queue was full, job not added
 		log.Error("Couldn't add request, queue is full")

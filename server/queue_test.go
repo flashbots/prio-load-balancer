@@ -2,6 +2,7 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"testing"
@@ -11,15 +12,15 @@ import (
 )
 
 func cloneRequest(req *SimRequest) *SimRequest {
-	return NewSimRequest("1", req.Payload, req.IsHighPrio, req.IsFastTrack)
+	return NewSimRequest(context.Background(), "1", req.Payload, req.IsHighPrio, req.IsFastTrack)
 }
 
 func fillQueue(t *testing.T, q *PrioQueue) {
 	t.Helper()
 
-	taskLowPrio := NewSimRequest("1", []byte("taskLowPrio"), false, false)
-	taskHighPrio := NewSimRequest("1", []byte("taskHighPrio"), true, false)
-	taskFastTrack := NewSimRequest("1", []byte("tasFastTrack"), false, true)
+	taskLowPrio := NewSimRequest(context.Background(), "1", []byte("taskLowPrio"), false, false)
+	taskHighPrio := NewSimRequest(context.Background(), "1", []byte("taskHighPrio"), true, false)
+	taskFastTrack := NewSimRequest(context.Background(), "1", []byte("tasFastTrack"), false, true)
 
 	q.Push(taskLowPrio)
 	q.Push(taskHighPrio)
@@ -46,7 +47,7 @@ func fillQueue(t *testing.T, q *PrioQueue) {
 
 func TestQueueBlockingPop(t *testing.T) {
 	q := NewPrioQueue(0, 0, 0, 2, false)
-	taskLowPrio := NewSimRequest("1", []byte("taskLowPrio"), false, false)
+	taskLowPrio := NewSimRequest(context.Background(), "1", []byte("taskLowPrio"), false, false)
 
 	// Ensure queue.Pop is blocking
 	t1 := time.Now()
@@ -102,7 +103,7 @@ func TestQueuePopping(t *testing.T) {
 
 func TestPrioQueueMultipleReaders(t *testing.T) {
 	q := NewPrioQueue(0, 0, 0, 2, false)
-	taskLowPrio := NewSimRequest("1", []byte("taskLowPrio"), false, false)
+	taskLowPrio := NewSimRequest(context.Background(), "1", []byte("taskLowPrio"), false, false)
 
 	counts := make(map[int]int)
 	resultC := make(chan int, 4)
@@ -155,7 +156,7 @@ func TestPrioQueueVarious(t *testing.T) {
 // Test used for benchmark: single reader
 func _testPrioQueue1(numWorkers, numItems int) *PrioQueue {
 	q := NewPrioQueue(0, 0, 0, 2, false)
-	taskLowPrio := NewSimRequest("1", []byte("taskLowPrio"), false, false)
+	taskLowPrio := NewSimRequest(context.Background(), "1", []byte("taskLowPrio"), false, false)
 
 	var wg sync.WaitGroup
 

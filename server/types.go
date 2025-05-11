@@ -1,6 +1,9 @@
 package server
 
-import "time"
+import (
+	"context"
+	"time"
+)
 
 type SimRequest struct {
 	// can be none of, or one of high-prio / fast-track
@@ -13,9 +16,10 @@ type SimRequest struct {
 	Cancelled bool
 	CreatedAt time.Time
 	Tries     int
+	Context   context.Context
 }
 
-func NewSimRequest(id string, payload []byte, isHighPrio, IsFastTrack bool) *SimRequest {
+func NewSimRequest(ctx context.Context, id string, payload []byte, isHighPrio, IsFastTrack bool) *SimRequest {
 	return &SimRequest{
 		ID:          id,
 		Payload:     payload,
@@ -23,6 +27,7 @@ func NewSimRequest(id string, payload []byte, isHighPrio, IsFastTrack bool) *Sim
 		IsFastTrack: IsFastTrack,
 		ResponseC:   make(chan SimResponse, 1),
 		CreatedAt:   time.Now().UTC(),
+		Context:     ctx,
 	}
 }
 
