@@ -118,9 +118,9 @@ func (n *Node) StopWorkersAndWait() {
 }
 
 func (n *Node) ProxyRequest(ctx context.Context, payload []byte, timeout time.Duration) (resp []byte, statusCode int, err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctxx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", n.URI, bytes.NewBuffer(payload))
+	httpReq, err := http.NewRequestWithContext(ctxx, "POST", n.URI, bytes.NewBuffer(payload))
 	if err != nil {
 		return resp, statusCode, errors.Wrap(err, "creating proxy request failed")
 	}
