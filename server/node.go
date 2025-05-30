@@ -28,7 +28,7 @@ type Node struct {
 
 func (n *Node) HealthCheck() error {
 	payload := `{"jsonrpc":"2.0","method":"net_version","params":[],"id":123}`
-	_, _, err := n.ProxyRequest([]byte(payload), 5*time.Second)
+	_, _, err := n.ProxyRequest(context.Background(), []byte(payload), 5*time.Second)
 	return err
 }
 
@@ -60,7 +60,7 @@ func (n *Node) startProxyWorker(id int32, cancelContext context.Context) {
 
 			req.Tries += 1
 			timeBeforeProxy := time.Now().UTC()
-			payload, statusCode, err := n.ProxyRequest(req.Payload, ProxyRequestTimeout)
+			payload, statusCode, err := n.ProxyRequest(req.Context, req.Payload, ProxyRequestTimeout)
 			requestDuration := time.Since(timeBeforeProxy)
 			_log = _log.With("requestDurationUS", requestDuration.Microseconds())
 			if err != nil {
@@ -117,10 +117,10 @@ func (n *Node) StopWorkersAndWait() {
 	}
 }
 
-func (n *Node) ProxyRequest(payload []byte, timeout time.Duration) (resp []byte, statusCode int, err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+func (n *Node) ProxyRequest(ctx context.Context, payload []byte, timeout time.Duration) (resp []byte, statusCode int, err error) {
+	ctxx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", n.URI, bytes.NewBuffer(payload))
+	httpReq, err := http.NewRequestWithContext(ctxx, "POST", n.URI, bytes.NewBuffer(payload))
 	if err != nil {
 		return resp, statusCode, errors.Wrap(err, "creating proxy request failed")
 	}
